@@ -87,6 +87,7 @@
     }
 
     .product-card {
+      position: relative;
       background: rgba(20, 20, 20, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 12px;
@@ -97,6 +98,28 @@
 
     .product-card:hover {
       transform: translateY(-5px);
+    }
+
+    .delete-prod-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 0, 0, 0.8);
+      color: white;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .delete-prod-btn:hover {
+      background: red;
     }
 
     .product-img {
@@ -208,7 +231,7 @@
       outline: none;
     }
 
-    /* ZONA DRAG & DROP ADMIN */
+    /* ZONA DRAG & DROP ADMIN Y CÁMARA */
     .drop-zone {
       border: 2px dashed #444;
       border-radius: 8px;
@@ -229,7 +252,7 @@
 
     .btn-camera {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       background: #222;
       color: #fff;
       border: 1px solid #444;
@@ -237,6 +260,22 @@
       cursor: pointer;
       margin-bottom: 15px;
       font-weight: bold;
+    }
+
+    #cameraContainer {
+      display: none;
+      text-align: center;
+      margin-bottom: 15px;
+      background: #000;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    #webcamVideo {
+      width: 100%;
+      max-height: 250px;
+      object-fit: cover;
+      border-radius: 6px;
     }
 
     /* CARRITO LATERAL */
@@ -363,7 +402,7 @@
   <div class="admin-modal" id="adminModal">
     <div class="admin-box">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3>PANEL ADMIN (NUEVO PRODUCTO)</h3>
+        <h3>PANEL ADMIN (GESTIÓN)</h3>
         <button onclick="closeAdmin()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
       
@@ -374,11 +413,16 @@
       <label style="font-size:0.8rem; color:#aaa;">Precio ($ USD):</label>
       <input type="number" id="newProdPrice" class="admin-input" placeholder="Ej: 85">
 
-      <!-- Opción 1: Tomar foto con la cámara -->
-      <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">📷 TOMAR FOTO CON CÁMARA</button>
-      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
+      <!-- Botón de Cámara en Vivo -->
+      <button class="btn-camera" onclick="startCamera()">📷 ABRIR CÁMARA REAL EN VIVO</button>
 
-      <!-- Opción 2: Arrastrar y soltar imagen (Drag and Drop) -->
+      <!-- Visor de la cámara activa -->
+      <div id="cameraContainer">
+        <video id="webcamVideo" autoplay playsinline></video>
+        <button class="add-btn" style="margin-top:10px; background:#22c55e; color:white;" onclick="capturePhoto()">CAPTURAR FOTO</button>
+      </div>
+
+      <!-- Drag & Drop o Galería -->
       <div class="drop-zone" id="dropZone">
         <p id="dropText">Arrastra una imagen aquí<br><span style="font-size:0.75rem; color:#666;">o haz clic para seleccionar de tu galería</span></p>
         <img id="imgPreview" style="display:none; width:100%; height:180px; object-fit:cover; border-radius:6px; margin-top:10px;">
@@ -401,6 +445,7 @@
       
       <!-- PRODUCTO DE PRUEBA DE $1 -->
       <div class="product-card" style="border: 2px solid #fff;">
+        <button class="delete-prod-btn" onclick="deleteProduct(this)" title="Eliminar producto">✕</button>
         <img src="https://via.placeholder.com/400x400" class="product-img" alt="Prueba">
         <div class="product-title">TEST PRODUCT ($1)</div>
         <div class="product-price">$1.00 USD</div>
@@ -412,6 +457,7 @@
 
       <!-- PRODUCTO PRINCIPAL -->
       <div class="product-card">
+        <button class="delete-prod-btn" onclick="deleteProduct(this)" title="Eliminar producto">✕</button>
         <img src="https://via.placeholder.com/400x400" class="product-img" alt="Short">
         <div class="product-title">HUSTLE BLACK SHORTS</div>
         <div class="product-price">$84.00 USD</div>
@@ -556,23 +602,7 @@
   <!-- FOOTER PIE DE PÁGINA -->
   <footer style="position: relative; z-index: 10; padding: 40px 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 80px; text-align: center; color: #888; font-size: 0.85rem;">
     <p>© 2026 GRAND HUSTLES. All rights reserved.</p>
-    <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-      <a href="#" onclick="openLegalModal('terms')" style="color: #aaa; text-decoration: none;">Terms & Conditions</a>
-      <a href="#" onclick="openLegalModal('privacy')" style="color: #aaa; text-decoration: none;">Privacy Policy</a>
-      <a href="#" onclick="openLegalModal('shipping')" style="color: #aaa; text-decoration: none;">Shipping & Refunds</a>
-    </div>
   </footer>
-
-  <!-- MODAL LEGAL -->
-  <div id="legalModal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: #111; color: #fff; border: 1px solid #333; border-radius: 12px; padding: 30px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 id="legalTitle" style="font-size: 1.2rem; font-weight: bold;">Términos y Condiciones</h3>
-        <button onclick="closeLegalModal()" style="background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer;">✕</button>
-      </div>
-      <div id="legalContent" style="font-size: 0.9rem; color: #ccc; line-height: 1.6;"></div>
-    </div>
-  </div>
 
   <!-- SCRIPTS Y LÓGICA -->
   <script>
@@ -709,7 +739,7 @@
       document.getElementById('zelleFields').style.display = (method === 'zelle') ? 'block' : 'none';
     }
 
-    // 3. PROCESAR PAGO STRIPE REAL (CONEXIÓN CON VERCEL /API/CHARGE)
+    // 3. PROCESAR PAGO STRIPE REAL
     async function processPayment() {
       const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
 
@@ -741,7 +771,6 @@
       payBtn.innerText = "Processing...";
       payBtn.disabled = true;
 
-      // Crear Método de pago en el cliente
       const { paymentMethod: stripeMethod, error } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
@@ -754,12 +783,10 @@
         return;
       }
 
-      // Calcular total del carrito
       let totalAmount = 0;
       cart.forEach(item => { totalAmount += item.price; });
       if (totalAmount <= 0) totalAmount = 1;
 
-      // Enviar a Vercel Backend (/api/charge)
       try {
         const response = await fetch('/api/charge', {
           method: 'POST',
@@ -796,8 +823,17 @@
       }
     }
 
-    // 4. LÓGICA DE PANEL ADMIN (CÁMARA, DRAG & DROP Y NUEVO PRODUCTO)
+    // 4. ELIMINAR PRODUCTOS DEL CATÁLOGO
+    function deleteProduct(btn) {
+      if (confirm('¿Estás seguro de que quieres eliminar este producto del catálogo?')) {
+        const card = btn.closest('.product-card');
+        card.remove();
+      }
+    }
+
+    // 5. CÁMARA REAL EN VIVO & DRAG AND DROP
     let uploadedImageBase64 = "https://via.placeholder.com/400x400";
+    let mediaStream = null;
 
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
@@ -806,12 +842,57 @@
     });
 
     function closeAdmin() {
+      stopCamera();
       document.getElementById('adminModal').style.display = 'none';
+    }
+
+    // Activar acceso explícito a la cámara del dispositivo
+    async function startCamera() {
+      const container = document.getElementById('cameraContainer');
+      const video = document.getElementById('webcamVideo');
+
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' }, 
+          audio: false 
+        });
+        video.srcObject = mediaStream;
+        container.style.display = 'block';
+      } catch (err) {
+        alert('No se pudo acceder a la cámara. Revisa que diste los permisos correspondientes en tu navegador.');
+      }
+    }
+
+    function stopCamera() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+      document.getElementById('cameraContainer').style.display = 'none';
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('webcamVideo');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      uploadedImageBase64 = canvas.toDataURL('image/jpeg');
+      
+      const imgPreview = document.getElementById('imgPreview');
+      const dropText = document.getElementById('dropText');
+      imgPreview.src = uploadedImageBase64;
+      imgPreview.style.display = 'block';
+      dropText.style.display = 'none';
+
+      stopCamera();
     }
 
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
-    const cameraInput = document.getElementById('cameraInput');
     const imgPreview = document.getElementById('imgPreview');
     const dropText = document.getElementById('dropText');
 
@@ -831,10 +912,6 @@
 
     fileInput.addEventListener('change', () => {
       if (fileInput.files.length > 0) handleImageFile(fileInput.files[0]);
-    });
-
-    cameraInput.addEventListener('change', () => {
-      if (cameraInput.files.length > 0) handleImageFile(cameraInput.files[0]);
     });
 
     function handleImageFile(file) {
@@ -861,6 +938,7 @@
       const newCard = document.createElement('div');
       newCard.className = 'product-card';
       newCard.innerHTML = `
+        <button class="delete-prod-btn" onclick="deleteProduct(this)" title="Eliminar producto">✕</button>
         <img src="${uploadedImageBase64}" class="product-img" alt="${name}">
         <div class="product-title">${name.toUpperCase()}</div>
         <div class="product-price">$${price.toFixed(2)} USD</div>
@@ -883,41 +961,6 @@
       imgPreview.style.display = 'none';
       dropText.style.display = 'block';
       uploadedImageBase64 = "https://via.placeholder.com/400x400";
-    }
-
-    // 5. DOCUMENTOS LEGALES
-    const legalDocs = {
-      terms: `
-        <h4>1. General</h4>
-        <p>Al acceder a GRAND HUSTLES, aceptas cumplir con nuestros términos de servicio. Nos reservamos el derecho de modificar o cancelar pedidos en cualquier momento.</p>
-        <br>
-        <h4>2. Ediciones Limitadas</h4>
-        <p>Todos nuestros productos son lanzamientos exclusivos en cantidades limitadas. La disponibilidad no está garantizada hasta completar el pago exitosamente.</p>
-      `,
-      privacy: `
-        <h4>Política de Privacidad</h4>
-        <p>Tus datos personales (nombre, dirección y correo) solo son utilizados para el procesamiento y envío de tu pedido. Los datos de pago son procesados de forma cifrada a través de Stripe y nunca son almacenados en nuestros servidores.</p>
-      `,
-      shipping: `
-        <h4>Envíos y Devoluciones</h4>
-        <p><strong>Envíos:</strong> Los pedidos tardan entre 3 y 5 días hábiles en ser procesados y enviados.</p>
-        <p><strong>Devoluciones:</strong> Debido a la naturaleza de lanzamientos limitados, <strong>todas las ventas son finales</strong>. No aceptamos cambios ni devoluciones a menos que el producto presente un defecto de fábrica.</p>
-      `
-    };
-
-    function openLegalModal(type) {
-      const titles = {
-        terms: 'Terms & Conditions',
-        privacy: 'Privacy Policy',
-        shipping: 'Shipping & Refund Policy'
-      };
-      document.getElementById('legalTitle').innerText = titles[type];
-      document.getElementById('legalContent').innerHTML = legalDocs[type];
-      document.getElementById('legalModal').style.display = 'flex';
-    }
-
-    function closeLegalModal() {
-      document.getElementById('legalModal').style.display = 'none';
     }
   </script>
 </body>
