@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -702,7 +702,7 @@
       });
     }
 
-    // FONDO 3D (THREE.JS)
+    // FONDO 3D (THREE.JS)[cite: 1]
     const canvas = document.getElementById('canvas3d');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -986,47 +986,45 @@
         <div class="product-title">${name}</div>
         <div class="product-price">$${price.toFixed(2)} USD</div>
         <select class="size-selector">
-          <option>Standard</option>
+          <option>S</option><option>M</option><option>L</option><option>XL</option>
         </select>
         <button class="add-btn" onclick="addToCart('${name}', ${price})">ADD TO CART</button>
       `;
 
       grid.appendChild(newCard);
-      alert("¡Producto agregado con éxito!");
+      actualizarListaEliminarAdmin();
+      alert("Producto agregado correctamente.");
       
-      // Limpiar campos
       document.getElementById('newProdName').value = '';
       document.getElementById('newProdPrice').value = '';
       document.getElementById('imgPreview').style.display = 'none';
-      selectedImageBase64 = "https://via.placeholder.com/400x400";
-      closeAdmin();
     }
 
     function actualizarListaEliminarAdmin() {
       const list = document.getElementById('adminDeleteList');
+      list.innerHTML = '';
       const cards = document.querySelectorAll('.product-card');
-      let html = '';
 
       cards.forEach(card => {
-        const title = card.querySelector('.product-title').innerText;
         const id = card.getAttribute('data-id');
-        html += `<li>
+        const title = card.querySelector('.product-title').innerText;
+        const li = document.createElement('li');
+        li.innerHTML = `
           <span>${title}</span>
-          <button class="btn-delete" onclick="eliminarProducto('${id}')">Eliminar</button>
-        </li>`;
+          <button class="btn-delete" onclick="removeProduct('${id}')">Eliminar</button>
+        `;
+        list.appendChild(li);
       });
-
-      list.innerHTML = html;
     }
 
-    function eliminarProducto(id) {
-      const card = document.querySelector(`[data-id="${id}"]`);
+    function removeProduct(id) {
+      const card = document.querySelector(`.product-card[data-id="${id}"]`);
       if (card) {
         card.remove();
         actualizarListaEliminarAdmin();
-        alert("Producto eliminado.");
       }
     }
   </script>
 </body>
 </html>
+```[cite: 1]
