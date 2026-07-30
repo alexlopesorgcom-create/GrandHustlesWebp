@@ -11,6 +11,10 @@
   <!-- SDK Oficial de Stripe -->
   <script src="https://js.stripe.com/v3/"></script>
 
+  <!-- SDKs de Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -512,28 +516,7 @@
   <!-- CATÁLOGO -->
   <div class="container">
     <div class="product-grid" id="productGrid">
-      <div class="product-card" style="border: 2px solid #fff;" data-id="test-1">
-        <img src="https://via.placeholder.com/400x400" class="product-img" alt="Prueba">
-        <div class="product-title">TEST PRODUCT ($1)</div>
-        <div class="product-price">$1.00 USD</div>
-        <select class="size-selector">
-          <option>Standard</option>
-        </select>
-        <button class="add-btn" onclick="addToCart('TEST PRODUCT ($1)', 1)">ADD TO CART</button>
-      </div>
-
-      <div class="product-card" data-id="prod-shorts">
-        <img src="https://via.placeholder.com/400x400" class="product-img" alt="Short">
-        <div class="product-title">HUSTLE BLACK SHORTS</div>
-        <div class="product-price">$84.00 USD</div>
-        <select class="size-selector">
-          <option>S</option>
-          <option>M</option>
-          <option>L</option>
-          <option>XL</option>
-        </select>
-        <button class="add-btn" onclick="addToCart('HUSTLE BLACK SHORTS', 84)">ADD TO CART</button>
-      </div>
+      <!-- Los productos se cargarán dinámicamente desde Firebase Firestore -->
     </div>
   </div>
 
@@ -673,6 +656,21 @@
   </div>
 
   <script>
+    // CONFIGURACIÓN DE FIREBASE (Reemplaza con tus credenciales si es necesario)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-TusCredencialesDeFirebase",
+      authDomain: "grand-hustles.firebaseapp.com",
+      projectId: "grand-hustles",
+      storageBucket: "grand-hustles.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcde"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
     // CONFIGURACIÓN DE STRIPE
     const STRIPE_PUBLISHABLE_KEY = 'pk_live_51TybDhLwe6dh6ocORfqtZjlzLrmr6o6p5ek7YyaAUSXTbI4VSpQHrawrGqBCDXlhNXVzgCtQ8bfL1mnFEWQNSHmh0023zd9CtW'; 
 
@@ -739,6 +737,42 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
+    function cargarProductosFirestore() {
+      const grid = document.getElementById('productGrid');
+      
+      db.collection("products").onSnapshot((snapshot) => {
+        grid.innerHTML = "";
+        
+        if (snapshot.empty) {
+          grid.innerHTML = '<p style="color:#666; grid-column: 1/-1; text-align:center;">No hay productos en el catálogo.</p>';
+          actualizarListaEliminarAdmin();
+          return;
+        }
+
+        snapshot.forEach((doc) => {
+          const product = doc.data();
+          const id = doc.id;
+
+          const card = document.createElement('div');
+          card.className = 'product-card';
+          card.setAttribute('data-id', id);
+          card.innerHTML = `
+            <img src="${product.image || 'https://via.placeholder.com/400x400'}" class="product-img" alt="${product.name}">
+            <div class="product-title">${product.name}</div>
+            <div class="product-price">$${Number(product.price).toFixed(2)} USD</div>
+            <select class="size-selector">
+              <option>S</option><option>M</option><option>L</option><option>XL</option>
+            </select>
+            <button class="add-btn" onclick="addToCart('${product.name}', ${product.price})">ADD TO CART</button>
+          `;
+          grid.appendChild(card);
+        });
+
+        actualizarListaEliminarAdmin();
+      });
+    }
 
     // LÓGICA DE TIENDA Y CARRITO
     let cart = [];
@@ -966,7 +1000,8 @@
       }
     }
 
-    function saveNewProduct() {
+    // GUARDAR EN FIRESTORE
+    async function saveNewProduct() {
       const name = document.getElementById('newProdName').value.trim();
       const price = parseFloat(document.getElementById('newProdPrice').value);
 
@@ -975,29 +1010,24 @@
         return;
       }
 
-      const id = 'prod-' + Date.now();
-      const grid = document.getElementById('productGrid');
-      
-      const newCard = document.createElement('div');
-      newCard.className = 'product-card';
-      newCard.setAttribute('data-id', id);
-      newCard.innerHTML = `
-        <img src="${selectedImageBase64}" class="product-img" alt="${name}">
-        <div class="product-title">${name}</div>
-        <div class="product-price">$${price.toFixed(2)} USD</div>
-        <select class="size-selector">
-          <option>S</option><option>M</option><option>L</option><option>XL</option>
-        </select>
-        <button class="add-btn" onclick="addToCart('${name}', ${price})">ADD TO CART</button>
-      `;
+      try {
+        await db.collection("products").add({
+          name: name,
+          price: price,
+          image: selectedImageBase64,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-      grid.appendChild(newCard);
-      actualizarListaEliminarAdmin();
-      alert("Producto agregado correctamente.");
-      
-      document.getElementById('newProdName').value = '';
-      document.getElementById('newProdPrice').value = '';
-      document.getElementById('imgPreview').style.display = 'none';
+        alert("Producto agregado y guardado en Firebase con éxito.");
+        
+        document.getElementById('newProdName').value = '';
+        document.getElementById('newProdPrice').value = '';
+        document.getElementById('imgPreview').style.display = 'none';
+        selectedImageBase64 = "https://via.placeholder.com/400x400";
+      } catch (error) {
+        console.error("Error al guardar en Firebase: ", error);
+        alert("Hubo un error al guardar el producto.");
+      }
     }
 
     function actualizarListaEliminarAdmin() {
@@ -1011,20 +1041,29 @@
         const li = document.createElement('li');
         li.innerHTML = `
           <span>${title}</span>
-          <button class="btn-delete" onclick="removeProduct('${id}')">Eliminar</button>
+          <button class="btn-delete" onclick="removeProductFromFirestore('${id}')">Eliminar</button>
         `;
         list.appendChild(li);
       });
     }
 
-    function removeProduct(id) {
-      const card = document.querySelector(`.product-card[data-id="${id}"]`);
-      if (card) {
-        card.remove();
-        actualizarListaEliminarAdmin();
+    // ELIMINAR DE FIRESTORE
+    async function removeProductFromFirestore(id) {
+      if (confirm("¿Estás seguro de eliminar este producto de la base de datos?")) {
+        try {
+          await db.collection("products").doc(id).delete();
+          alert("Producto eliminado correctamente.");
+        } catch (error) {
+          console.error("Error al eliminar de Firebase: ", error);
+          alert("Hubo un error al eliminar el producto.");
+        }
       }
     }
+
+    // Iniciar carga de productos al abrir la página
+    window.onload = function() {
+      cargarProductosFirestore();
+    };
   </script>
 </body>
 </html>
-```[cite: 1]
