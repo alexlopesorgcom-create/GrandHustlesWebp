@@ -1,43 +1,621 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grand Hustles</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRAND HUSTLES</title>
+
+  <!-- Librería Three.js para el Fondo 3D -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- SDK Oficial de Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #050505;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* CANVAS 3D FONDO */
+    #canvas3d {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* HEADER / NAV */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: rgba(5, 5, 5, 0.6);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+    }
+
+    .cart-btn {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 8px 18px;
+      font-weight: bold;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    /* CONTENEDOR PRINCIPAL */
+    .container {
+      position: relative;
+      z-index: 10;
+      padding-top: 120px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    /* GRID DE PRODUCTOS */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+
+    .product-card {
+      background: rgba(20, 20, 20, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(5px);
+      transition: transform 0.3s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .product-img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .product-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .product-price {
+      color: #aaa;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    .size-selector {
+      width: 100%;
+      padding: 10px;
+      background: #111;
+      color: white;
+      border: 1px solid #333;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .add-btn {
+      width: 100%;
+      padding: 12px;
+      background: #fff;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* MODAL ACCESO VIP */
+    .access-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.95);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .access-box {
+      text-align: center;
+      background: #111;
+      padding: 40px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .access-box input {
+      width: 100%;
+      padding: 12px;
+      margin: 15px 0;
+      background: #222;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    /* PANEL ADMIN OCULTO */
+    .admin-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.9);
+      z-index: 2500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .admin-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    /* CARRITO LATERAL */
+    .cart-drawer {
+      position: fixed;
+      top: 0; right: -400px;
+      width: 380px; height: 100vh;
+      background: #111;
+      z-index: 1200;
+      transition: right 0.3s ease;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+    }
+
+    .cart-drawer.open {
+      right: 0;
+    }
+
+    /* CHECKOUT MODAL */
+    .checkout-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.9);
+      z-index: 1500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .checkout-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 25px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: white;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .checkout-btn {
+      width: 100%;
+      padding: 15px;
+      background: #fff;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 15px;
+    }
+  </style>
 </head>
-<body class="bg-zinc-950 text-white font-sans antialiased min-h-screen flex flex-col justify-between">
+<body>
 
-    <!-- Header / Navbar -->
-    <header class="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <h1 class="text-xl font-black tracking-wider uppercase text-white">Grand Hustles</h1>
-            <nav class="space-x-6 text-sm font-medium text-zinc-400">
-                <a href="#" class="hover:text-white transition">Inicio</a>
-                <a href="#" class="hover:text-white transition">Catálogo</a>
-                <a href="#" class="hover:text-white transition">Contacto</a>
-            </nav>
+  <!-- CANVAS 3D -->
+  <canvas id="canvas3d"></canvas>
+
+  <!-- POPUP ACCESO VIP -->
+  <div class="access-modal" id="accessModal">
+    <div class="access-box">
+      <h2>GRAND HUSTLES</h2>
+      <p style="color:#aaa; font-size:0.85rem; margin-top:5px;">Enter VIP Access Code</p>
+      <input type="password" id="accessInput" placeholder="ENTER CODE">
+      <button class="add-btn" onclick="checkAccess()">ENTER DROP</button>
+    </div>
+  </div>
+
+  <!-- PANEL ADMIN OCULTO (Ctrl + Shift + A) -->
+  <div class="admin-modal" id="adminModal">
+    <div class="admin-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3>PANEL ADMIN (SECRETO)</h3>
+        <button onclick="closeAdmin()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+      <p style="color:#aaa; font-size:0.85rem; margin-bottom:15px;">Ajustes rápidos de la tienda.</p>
+      <div class="form-group">
+        <label>Contraseña de Admin</label>
+        <input type="password" id="adminPass" placeholder="Clave secreta">
+      </div>
+      <button class="add-btn" onclick="alert('Modo Admin Activo.'); closeAdmin();">VERIFICAR ADMIN</button>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand-title">GRAND HUSTLES</div>
+    <button class="cart-btn" onclick="toggleCart()">CART (<span id="cartCount">0</span>)</button>
+  </header>
+
+  <!-- CATALOGO -->
+  <div class="container">
+    <div class="product-grid">
+      
+      <!-- PRODUCTO DE PRUEBA DE $1 -->
+      <div class="product-card" style="border: 2px solid #fff;">
+        <img src="https://via.placeholder.com/400x400" class="product-img" alt="Prueba">
+        <div class="product-title">TEST PRODUCT ($1)</div>
+        <div class="product-price">$1.00 USD</div>
+        <select class="size-selector">
+          <option>Standard</option>
+        </select>
+        <button class="add-btn" onclick="addToCart('TEST PRODUCT ($1)', 1)">ADD TO CART</button>
+      </div>
+
+      <!-- PRODUCTO PRINCIPAL -->
+      <div class="product-card">
+        <img src="https://via.placeholder.com/400x400" class="product-img" alt="Short">
+        <div class="product-title">HUSTLE BLACK SHORTS</div>
+        <div class="product-price">$84.00 USD</div>
+        <select class="size-selector">
+          <option>S</option>
+          <option>M</option>
+          <option>L</option>
+          <option>XL</option>
+        </select>
+        <button class="add-btn" onclick="addToCart('HUSTLE BLACK SHORTS', 84)">ADD TO CART</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CARRITO DESLIZABLE -->
+  <div class="cart-drawer" id="cartDrawer">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3>YOUR CART</h3>
+      <button onclick="toggleCart()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+    </div>
+    <div id="cartItems" style="flex:1; overflow-y:auto;">
+      <p style="color:#666;">Your cart is empty.</p>
+    </div>
+    <div style="border-top:1px solid #222; padding-top:15px; margin-top:15px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+        <span>Total:</span>
+        <span id="cartTotal" style="font-weight:bold;">$0.00 USD</span>
+      </div>
+      <button class="checkout-btn" onclick="openCheckout()">CHECKOUT</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE CHECKOUT -->
+  <div class="checkout-modal" id="checkoutModal">
+    <div class="checkout-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #222; padding-bottom:10px;">
+        <h3 style="font-weight:900; letter-spacing:1px;">CHECKOUT</h3>
+        <button onclick="closeCheckout()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+
+      <h4 style="font-size:0.9rem; color:#888; text-transform:uppercase; margin-bottom:10px;">Delivery</h4>
+      
+      <div class="form-group">
+        <label>Country / Region</label>
+        <select><option>United States</option></select>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label>First name</label>
+          <input type="text" id="custName" placeholder="Nombre">
         </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="flex-grow flex items-center justify-center px-4 py-16">
-        <div class="text-center max-w-2xl mx-auto">
-            <span class="inline-block py-1 px-3 rounded-full bg-zinc-800 text-zinc-300 text-xs font-semibold uppercase tracking-widest mb-4">Official Store</span>
-            <h2 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6">Elevate Your Style</h2>
-            <p class="text-zinc-400 text-lg mb-8">Descubre la nueva colección exclusiva. Diseños únicos con la mejor calidad urbana.</p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="#" class="bg-white text-zinc-950 font-bold py-3 px-8 rounded-lg hover:bg-zinc-200 transition">Ver Productos</a>
-                <a href="#" class="border border-zinc-700 text-white font-bold py-3 px-8 rounded-lg hover:bg-zinc-900 transition">Saber Más</a>
-            </div>
+        <div class="form-group" style="flex:1;">
+          <label>Last name</label>
+          <input type="text" placeholder="Apellido">
         </div>
-    </main>
+      </div>
 
-    <!-- Footer -->
-    <footer class="border-t border-zinc-900 py-6 text-center text-zinc-600 text-sm">
-        <p>&copy; 2026 Grand Hustles. Todos los derechos reservados.</p>
-    </footer>
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" placeholder="Dirección de envío">
+      </div>
 
+      <!-- SECCIÓN PAGO -->
+      <h4 style="font-size:0.9rem; color:#888; text-transform:uppercase; margin-top:20px; margin-bottom:10px;">Payment</h4>
+
+      <div style="border:1px solid #333; border-radius:6px; overflow:hidden; margin-bottom:15px;">
+        
+        <!-- Opción 1: Tarjeta / Stripe -->
+        <label style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#1a1a1a; cursor:pointer; border-bottom:1px solid #222;">
+          <div>
+            <input type="radio" name="payment_method" value="stripe" checked onclick="togglePaymentFields('stripe')">
+            <span style="font-weight:bold; margin-left:8px; font-size:0.9rem;">Credit Card / Apple Pay (Stripe)</span>
+          </div>
+          <span style="font-size:0.75rem; color:#aaa;">VISA / MC / Pay</span>
+        </label>
+
+        <div id="stripeFields" style="padding:15px; background:#111;">
+          <!-- Campo seguro oficial de Stripe -->
+          <div id="card-element" style="padding:10px; background:#222; border-radius:4px;"></div>
+          <div id="card-errors" style="color:#ff4d4d; font-size:0.8rem; margin-top:8px;" role="alert"></div>
+        </div>
+
+        <!-- Opción 2: Zelle -->
+        <label style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#1a1a1a; cursor:pointer;">
+          <div>
+            <input type="radio" name="payment_method" value="zelle" onclick="togglePaymentFields('zelle')">
+            <span style="font-weight:bold; margin-left:8px; font-size:0.9rem;">Zelle Transfer</span>
+          </div>
+          <span style="color:#7414ca; font-weight:bold; font-size:0.85rem;">zelle</span>
+        </label>
+
+        <div id="zelleFields" style="padding:15px; background:#111; display:none; font-size:0.85rem; color:#ccc;">
+          Envía el total de tu orden a nuestro Zelle: <strong>+1 (714) 381 9023</strong>. Coloca tu nombre en la nota.
+        </div>
+
+      </div>
+
+      <button class="checkout-btn" id="payBtn" onclick="processPayment()">PAY NOW</button>
+    </div>
+  </div>
+
+  <!-- SCRIPTS Y LÓGICA -->
+  <script>
+    // -------------------------------------------------------------
+    // CONFIGURACIÓN DE STRIPE (PUBLISHABLE KEY DE PRODUCCIÓN)
+    const STRIPE_PUBLISHABLE_KEY = 'pk_live_51TybDhLwe6dh6ocORfqtZjlzLrmr6o6p5ek7YyaAUSXTbI4VSpQHrawrGqBCDXlhNXVzgCtQ8bfL1mnFEWQNSHmh0023zd9CtW'; 
+    // -------------------------------------------------------------
+
+    let stripe;
+    let elements;
+    let cardElement;
+
+    if (STRIPE_PUBLISHABLE_KEY) {
+      stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+      elements = stripe.elements();
+      cardElement = elements.create('card', {
+        style: {
+          base: {
+            color: '#ffffff',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: '16px',
+            '::placeholder': { color: '#888888' }
+          },
+          invalid: { color: '#ff4d4d' }
+        }
+      });
+      cardElement.mount('#card-element');
+
+      cardElement.on('change', (event) => {
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+          displayError.textContent = event.error.message;
+        } else {
+          displayError.textContent = '';
+        }
+      });
+    }
+
+    // --- 1. ESCENA THREE.JS (FONDO 3D) ---
+    const canvas = document.getElementById('canvas3d');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    const particlesGeometry = new THREE.BufferGeometry();
+    const count = 700;
+    const positions = new Float32Array(count * 3);
+
+    for(let i=0; i < count * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 15;
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particlesMaterial = new THREE.PointsMaterial({ size: 0.03, color: 0xffffff, transparent: true, opacity: 0.6 });
+    const particleMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particleMesh);
+
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      particleMesh.rotation.y += 0.001;
+      particleMesh.rotation.x += 0.0005;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- 2. LÓGICA DE TIENDA Y CHECKOUT ---
+    let cart = [];
+
+    function checkAccess() {
+      const code = document.getElementById('accessInput').value.trim().toLowerCase();
+      if (code === 'alex') {
+        document.getElementById('accessModal').style.display = 'none';
+      } else {
+        alert('Código de acceso incorrecto.');
+      }
+    }
+
+    function toggleCart() {
+      document.getElementById('cartDrawer').classList.toggle('open');
+    }
+
+    function addToCart(name, price) {
+      cart.push({ name, price });
+      updateCartUI();
+      toggleCart();
+    }
+
+    function updateCartUI() {
+      document.getElementById('cartCount').innerText = cart.length;
+      const cartItems = document.getElementById('cartItems');
+      const cartTotal = document.getElementById('cartTotal');
+      
+      if (cart.length === 0) {
+        cartItems.innerHTML = '<p style="color:#666;">Your cart is empty.</p>';
+        cartTotal.innerText = '$0.00 USD';
+        return;
+      }
+
+      let html = '';
+      let total = 0;
+      cart.forEach((item) => {
+        total += item.price;
+        html += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">
+          <span>${item.name}</span>
+          <span>$${item.price}.00</span>
+        </div>`;
+      });
+
+      cartItems.innerHTML = html;
+      cartTotal.innerText = `$${total}.00 USD`;
+    }
+
+    function openCheckout() {
+      if (cart.length === 0) {
+        alert('Tu carrito está vacío');
+        return;
+      }
+      toggleCart();
+      document.getElementById('checkoutModal').style.display = 'flex';
+    }
+
+    function closeCheckout() {
+      document.getElementById('checkoutModal').style.display = 'none';
+    }
+
+    function togglePaymentFields(method) {
+      document.getElementById('stripeFields').style.display = (method === 'stripe') ? 'block' : 'none';
+      document.getElementById('zelleFields').style.display = (method === 'zelle') ? 'block' : 'none';
+    }
+
+    // --- 3. PROCESAR PAGO REAL DE STRIPE ---
+    async function processPayment() {
+      const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+
+      if (paymentMethod === 'zelle') {
+        alert('Gracias. Por favor realiza tu transferencia Zelle al +1 (714) 381 9023 para enviar tu pedido.');
+        closeCheckout();
+        return;
+      }
+
+      if (!stripe || !cardElement) {
+        alert('Error con la configuración de Stripe.');
+        return;
+      }
+
+      const payBtn = document.getElementById('payBtn');
+      payBtn.innerText = "PROCESANDO...";
+      payBtn.disabled = true;
+
+      const { paymentMethod: stripeMethod, error } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (error) {
+        document.getElementById('card-errors').textContent = error.message;
+        payBtn.innerText = "PAY NOW";
+        payBtn.disabled = false;
+      } else {
+        alert('¡Pago procesado con éxito en Stripe!\nToken generado: ' + stripeMethod.id);
+        payBtn.innerText = "PAY NOW";
+        payBtn.disabled = false;
+        closeCheckout();
+      }
+    }
+
+    // ATAJO TECLADO PANEL ADMIN (Ctrl + Shift + A)
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        document.getElementById('adminModal').style.display = 'flex';
+      }
+    });
+
+    function closeAdmin() {
+      document.getElementById('adminModal').style.display = 'none';
+    }
+  </script>
 </body>
 </html>
