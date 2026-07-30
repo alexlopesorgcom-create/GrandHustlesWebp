@@ -178,7 +178,7 @@
       position: fixed;
       top: 0; left: 0;
       width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.92);
       z-index: 2500;
       display: none;
       align-items: center;
@@ -193,25 +193,50 @@
       padding: 30px;
       max-width: 500px;
       width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .admin-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #222;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 6px;
+      outline: none;
     }
 
     /* ZONA DRAG & DROP ADMIN */
     .drop-zone {
       border: 2px dashed #444;
       border-radius: 8px;
-      padding: 25px;
+      padding: 20px;
       text-align: center;
       color: #aaa;
       cursor: pointer;
-      margin-top: 15px;
       margin-bottom: 15px;
       transition: all 0.3s ease;
+      background: #181818;
     }
 
     .drop-zone.dragover {
       background: rgba(255,255,255,0.08);
       border-color: #fff;
       color: #fff;
+    }
+
+    .btn-camera {
+      width: 100%;
+      padding: 10px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 15px;
+      font-weight: bold;
     }
 
     /* CARRITO LATERAL */
@@ -338,18 +363,29 @@
   <div class="admin-modal" id="adminModal">
     <div class="admin-box">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3>PANEL ADMIN (SECRETO)</h3>
+        <h3>PANEL ADMIN (NUEVO PRODUCTO)</h3>
         <button onclick="closeAdmin()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
-      <p style="color:#aaa; font-size:0.85rem; margin-bottom:15px;">Arrastra la imagen del nuevo producto aquí:</p>
       
-      <!-- Zona de Arrastrar e Imagen (Drag and Drop) -->
+      <!-- Campos de Nombre y Precio -->
+      <label style="font-size:0.8rem; color:#aaa;">Nombre del producto:</label>
+      <input type="text" id="newProdName" class="admin-input" placeholder="Ej: HUSTLE BLACK HOODIE">
+
+      <label style="font-size:0.8rem; color:#aaa;">Precio ($ USD):</label>
+      <input type="number" id="newProdPrice" class="admin-input" placeholder="Ej: 85">
+
+      <!-- Opción 1: Tomar foto con la cámara -->
+      <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">📷 TOMAR FOTO CON CÁMARA</button>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
+
+      <!-- Opción 2: Arrastrar y soltar imagen (Drag and Drop) -->
       <div class="drop-zone" id="dropZone">
-        <p id="dropText">Arrastra y suelta tu imagen aquí<br><span style="font-size:0.75rem; color:#666;">o haz clic para seleccionar</span></p>
+        <p id="dropText">Arrastra una imagen aquí<br><span style="font-size:0.75rem; color:#666;">o haz clic para seleccionar de tu galería</span></p>
+        <img id="imgPreview" style="display:none; width:100%; height:180px; object-fit:cover; border-radius:6px; margin-top:10px;">
         <input type="file" id="fileInput" accept="image/*" style="display:none;">
       </div>
 
-      <button class="add-btn" onclick="alert('Imagen cargada al sistema Admin.'); closeAdmin();">GUARDAR CAMBIOS</button>
+      <button class="add-btn" onclick="saveNewProduct()">AGREGAR PRODUCTO AL CATÁLOGO</button>
     </div>
   </div>
 
@@ -361,7 +397,7 @@
 
   <!-- CATALOGO -->
   <div class="container">
-    <div class="product-grid">
+    <div class="product-grid" id="productGrid">
       
       <!-- PRODUCTO DE PRUEBA DE $1 -->
       <div class="product-card" style="border: 2px solid #fff;">
@@ -432,26 +468,26 @@
 
       <div style="display:flex; gap:8px;">
         <div class="form-group-shopify" style="flex:1;">
-          <input type="text" id="custName" placeholder="First name">
+          <input type="text" id="custFirstName" placeholder="First name">
         </div>
         <div class="form-group-shopify" style="flex:1;">
-          <input type="text" placeholder="Last name">
+          <input type="text" id="custLastName" placeholder="Last name">
         </div>
       </div>
 
       <div class="form-group-shopify">
-        <input type="text" placeholder="Address">
+        <input type="text" id="custAddress" placeholder="Address">
       </div>
 
       <div style="display:flex; gap:8px;">
         <div class="form-group-shopify" style="flex:1;">
-          <input type="text" placeholder="City">
+          <input type="text" id="custCity" placeholder="City">
         </div>
         <div class="form-group-shopify" style="flex:1;">
-          <input type="text" placeholder="State (California)">
+          <input type="text" id="custState" placeholder="State (California)">
         </div>
         <div class="form-group-shopify" style="flex:1;">
-          <input type="text" placeholder="ZIP code">
+          <input type="text" id="custZip" placeholder="ZIP code">
         </div>
       </div>
 
@@ -688,6 +724,19 @@
         return;
       }
 
+      const email = document.getElementById('custEmail').value.trim();
+      const firstName = document.getElementById('custFirstName').value.trim();
+      const lastName = document.getElementById('custLastName').value.trim();
+      const address = document.getElementById('custAddress').value.trim();
+      const city = document.getElementById('custCity').value.trim();
+      const state = document.getElementById('custState').value.trim();
+      const zip = document.getElementById('custZip').value.trim();
+
+      if (!email || !address || !city || !zip) {
+        alert('Por favor completa todos los campos de dirección y correo electrónico.');
+        return;
+      }
+
       const payBtn = document.getElementById('payBtn');
       payBtn.innerText = "Processing...";
       payBtn.disabled = true;
@@ -717,7 +766,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: totalAmount,
-            paymentMethodId: stripeMethod.id
+            paymentMethodId: stripeMethod.id,
+            email: email,
+            shipping: {
+              name: `${firstName} ${lastName}`.trim(),
+              address: address,
+              city: city,
+              state: state,
+              zip: zip
+            }
           })
         });
 
@@ -739,7 +796,9 @@
       }
     }
 
-    // 4. DRAG AND DROP ADMIN Y ATAJO (Ctrl + Shift + A)
+    // 4. LÓGICA DE PANEL ADMIN (CÁMARA, DRAG & DROP Y NUEVO PRODUCTO)
+    let uploadedImageBase64 = "https://via.placeholder.com/400x400";
+
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
         document.getElementById('adminModal').style.display = 'flex';
@@ -752,6 +811,9 @@
 
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
+    const cameraInput = document.getElementById('cameraInput');
+    const imgPreview = document.getElementById('imgPreview');
+    const dropText = document.getElementById('dropText');
 
     dropZone.addEventListener('click', () => fileInput.click());
 
@@ -764,16 +826,64 @@
 
     dropZone.addEventListener('drop', (e) => {
       const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        document.getElementById('dropText').innerText = "Imagen cargada: " + files[0].name;
-      }
+      if (files.length > 0) handleImageFile(files[0]);
     });
 
     fileInput.addEventListener('change', () => {
-      if (fileInput.files.length > 0) {
-        document.getElementById('dropText').innerText = "Imagen cargada: " + fileInput.files[0].name;
-      }
+      if (fileInput.files.length > 0) handleImageFile(fileInput.files[0]);
     });
+
+    cameraInput.addEventListener('change', () => {
+      if (cameraInput.files.length > 0) handleImageFile(cameraInput.files[0]);
+    });
+
+    function handleImageFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        uploadedImageBase64 = e.target.result;
+        imgPreview.src = uploadedImageBase64;
+        imgPreview.style.display = 'block';
+        dropText.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveNewProduct() {
+      const name = document.getElementById('newProdName').value.trim();
+      const price = parseFloat(document.getElementById('newProdPrice').value);
+
+      if (!name || isNaN(price) || price <= 0) {
+        alert('Por favor ingresa un nombre y un precio válidos.');
+        return;
+      }
+
+      const grid = document.getElementById('productGrid');
+      const newCard = document.createElement('div');
+      newCard.className = 'product-card';
+      newCard.innerHTML = `
+        <img src="${uploadedImageBase64}" class="product-img" alt="${name}">
+        <div class="product-title">${name.toUpperCase()}</div>
+        <div class="product-price">$${price.toFixed(2)} USD</div>
+        <select class="size-selector">
+          <option>S</option>
+          <option>M</option>
+          <option>L</option>
+          <option>XL</option>
+        </select>
+        <button class="add-btn" onclick="addToCart('${name.toUpperCase()}', ${price})">ADD TO CART</button>
+      `;
+
+      grid.appendChild(newCard);
+      alert('¡Producto agregado con éxito!');
+      closeAdmin();
+
+      // Resetear formulario
+      document.getElementById('newProdName').value = '';
+      document.getElementById('newProdPrice').value = '';
+      imgPreview.style.display = 'none';
+      dropText.style.display = 'block';
+      uploadedImageBase64 = "https://via.placeholder.com/400x400";
+    }
 
     // 5. DOCUMENTOS LEGALES
     const legalDocs = {
