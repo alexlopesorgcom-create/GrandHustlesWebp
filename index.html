@@ -646,7 +646,7 @@
       document.getElementById('zelleFields').style.display = (method === 'zelle') ? 'block' : 'none';
     }
 
-    // 3. PROCESAR PAGO STRIPE
+    // 3. PROCESAR PAGO STRIPE REAL (CONEXIÓN CON VERCEL /API/CHARGE)
     async function processPayment() {
       const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
 
@@ -665,6 +665,7 @@
       payBtn.innerText = "Processing...";
       payBtn.disabled = true;
 
+      // 1. Crear Método de pago en el cliente
       const { paymentMethod: stripeMethod, error } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
@@ -674,11 +675,40 @@
         document.getElementById('card-errors').textContent = error.message;
         payBtn.innerText = "Pay now";
         payBtn.disabled = false;
-      } else {
-        alert('¡Pago procesado con éxito en Stripe!\nID: ' + stripeMethod.id);
+        return;
+      }
+
+      // 2. Calcular total del carrito
+      let totalAmount = 0;
+      cart.forEach(item => { totalAmount += item.price; });
+      if (totalAmount <= 0) totalAmount = 1;
+
+      // 3. Enviar a Vercel Backend (/api/charge)
+      try {
+        const response = await fetch('/api/charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: totalAmount,
+            paymentMethodId: stripeMethod.id
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert('¡Pago completado con éxito! Tu orden ha sido procesada.');
+          cart = [];
+          updateCartUI();
+          closeCheckout();
+        } else {
+          document.getElementById('card-errors').textContent = result.error || 'Ocurrió un error al procesar el pago.';
+        }
+      } catch (err) {
+        document.getElementById('card-errors').textContent = 'Error al conectar con el servidor de cobro.';
+      } finally {
         payBtn.innerText = "Pay now";
         payBtn.disabled = false;
-        closeCheckout();
       }
     }
 
