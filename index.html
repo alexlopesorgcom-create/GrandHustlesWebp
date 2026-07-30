@@ -195,6 +195,25 @@
       width: 100%;
     }
 
+    /* ZONA DRAG & DROP ADMIN */
+    .drop-zone {
+      border: 2px dashed #444;
+      border-radius: 8px;
+      padding: 25px;
+      text-align: center;
+      color: #aaa;
+      cursor: pointer;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .drop-zone.dragover {
+      background: rgba(255,255,255,0.08);
+      border-color: #fff;
+      color: #fff;
+    }
+
     /* CARRITO LATERAL */
     .cart-drawer {
       position: fixed;
@@ -213,63 +232,90 @@
       right: 0;
     }
 
-    /* CHECKOUT MODAL */
+    /* CHECKOUT MODAL ESTILO SHOPIFY (CLARO Y LIMPIO) */
     .checkout-modal {
       position: fixed;
       top: 0; left: 0;
       width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.85);
       z-index: 1500;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 15px;
     }
 
     .checkout-box {
-      background: #111;
-      border: 1px solid #333;
+      background: #f6f6f6;
+      color: #111;
       border-radius: 12px;
       padding: 25px;
-      max-width: 500px;
+      max-width: 480px;
       width: 100%;
-      max-height: 90vh;
+      max-height: 92vh;
       overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    .form-group {
-      margin-bottom: 12px;
+    .form-group-shopify {
+      margin-bottom: 10px;
     }
 
-    .form-group label {
-      display: block;
-      font-size: 0.75rem;
-      color: #888;
-      margin-bottom: 4px;
-      text-transform: uppercase;
-    }
-
-    .form-group input, .form-group select {
+    .form-group-shopify input, .form-group-shopify select {
       width: 100%;
-      padding: 10px;
-      background: #1a1a1a;
-      border: 1px solid #333;
-      color: white;
-      border-radius: 6px;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #d9d9d9;
+      color: #111;
+      border-radius: 8px;
       font-size: 0.9rem;
+      outline: none;
     }
 
-    .checkout-btn {
-      width: 100%;
-      padding: 15px;
-      background: #fff;
-      color: #000;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
+    .payment-container {
+      border: 1px solid #d9d9d9;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+      margin-top: 10px;
+      margin-bottom: 15px;
+    }
+
+    .payment-option-header {
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e6e6e6;
       cursor: pointer;
-      font-size: 1rem;
-      margin-top: 15px;
+      background: #fafafa;
+    }
+
+    .payment-option-header:last-child {
+      border-bottom: none;
+    }
+
+    .payment-option-header input[type="radio"] {
+      accent-color: #000;
+    }
+
+    .card-badge {
+      background: #1434CB;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-style: italic;
+    }
+
+    .card-badge.mc { background: #EB001B; }
+    .card-badge.amex { background: #006FCF; }
+
+    .payment-body {
+      padding: 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #e6e6e6;
     }
   </style>
 </head>
@@ -295,12 +341,15 @@
         <h3>PANEL ADMIN (SECRETO)</h3>
         <button onclick="closeAdmin()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
-      <p style="color:#aaa; font-size:0.85rem; margin-bottom:15px;">Ajustes rápidos de la tienda.</p>
-      <div class="form-group">
-        <label>Contraseña de Admin</label>
-        <input type="password" id="adminPass" placeholder="Clave secreta">
+      <p style="color:#aaa; font-size:0.85rem; margin-bottom:15px;">Arrastra la imagen del nuevo producto aquí:</p>
+      
+      <!-- Zona de Arrastrar e Imagen (Drag and Drop) -->
+      <div class="drop-zone" id="dropZone">
+        <p id="dropText">Arrastra y suelta tu imagen aquí<br><span style="font-size:0.75rem; color:#666;">o haz clic para seleccionar</span></p>
+        <input type="file" id="fileInput" accept="image/*" style="display:none;">
       </div>
-      <button class="add-btn" onclick="alert('Modo Admin Activo.'); closeAdmin();">VERIFICAR ADMIN</button>
+
+      <button class="add-btn" onclick="alert('Imagen cargada al sistema Admin.'); closeAdmin();">GUARDAR CAMBIOS</button>
     </div>
   </div>
 
@@ -356,86 +405,116 @@
         <span>Total:</span>
         <span id="cartTotal" style="font-weight:bold;">$0.00 USD</span>
       </div>
-      <button class="checkout-btn" onclick="openCheckout()">CHECKOUT</button>
+      <button class="add-btn" style="width:100%; padding:15px; font-size:1rem;" onclick="openCheckout()">CHECKOUT</button>
     </div>
   </div>
 
-  <!-- MODAL DE CHECKOUT -->
+  <!-- MODAL DE CHECKOUT ESTILO SHOPIFY -->
   <div class="checkout-modal" id="checkoutModal">
     <div class="checkout-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #222; padding-bottom:10px;">
-        <h3 style="font-weight:900; letter-spacing:1px;">CHECKOUT</h3>
-        <button onclick="closeCheckout()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="font-size:1.2rem; font-weight:800;">Checkout</h3>
+        <button onclick="closeCheckout()" style="background:none; border:none; color:#111; font-size:1.4rem; cursor:pointer;">✕</button>
       </div>
 
-      <h4 style="font-size:0.9rem; color:#888; text-transform:uppercase; margin-bottom:10px;">Delivery</h4>
+      <!-- SECCIÓN DELIVERY -->
+      <h4 style="font-size:1rem; font-weight:700; margin-bottom:10px;">Delivery</h4>
       
-      <div class="form-group">
-        <label>Country / Region</label>
-        <select><option>United States</option></select>
+      <div class="form-group-shopify">
+        <input type="text" placeholder="Country / Region" value="United States" readonly>
       </div>
 
-      <div style="display:flex; gap:10px;">
-        <div class="form-group" style="flex:1;">
-          <label>First name</label>
-          <input type="text" id="custName" placeholder="Nombre">
+      <div style="display:flex; gap:8px;">
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" id="custName" placeholder="First name">
         </div>
-        <div class="form-group" style="flex:1;">
-          <label>Last name</label>
-          <input type="text" placeholder="Apellido">
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" placeholder="Last name">
         </div>
       </div>
 
-      <div class="form-group">
-        <label>Address</label>
-        <input type="text" placeholder="Dirección de envío">
+      <div class="form-group-shopify">
+        <input type="text" placeholder="Address">
       </div>
 
-      <!-- SECCIÓN PAGO -->
-      <h4 style="font-size:0.9rem; color:#888; text-transform:uppercase; margin-top:20px; margin-bottom:10px;">Payment</h4>
+      <div style="display:flex; gap:8px;">
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" placeholder="City">
+        </div>
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" placeholder="State (California)">
+        </div>
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" placeholder="ZIP code">
+        </div>
+      </div>
 
-      <div style="border:1px solid #333; border-radius:6px; overflow:hidden; margin-bottom:15px;">
+      <!-- SECCIÓN PAYMENT -->
+      <h4 style="font-size:1rem; font-weight:700; margin-top:20px; margin-bottom:2px;">Payment</h4>
+      <p style="font-size:0.75rem; color:#666; margin-bottom:10px;">All transactions are secure and encrypted.</p>
+
+      <div class="payment-container">
         
-        <!-- Opción 1: Tarjeta / Stripe -->
-        <label style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#1a1a1a; cursor:pointer; border-bottom:1px solid #222;">
-          <div>
-            <input type="radio" name="payment_method" value="stripe" checked onclick="togglePaymentFields('stripe')">
-            <span style="font-weight:bold; margin-left:8px; font-size:0.9rem;">Credit Card / Apple Pay (Stripe)</span>
+        <!-- Opción: Credit Card -->
+        <div class="payment-option-header" onclick="document.getElementById('pay_card').click()">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" id="pay_card" name="payment_method" value="stripe" checked onclick="togglePaymentFields('stripe')">
+            <span style="font-weight:600; font-size:0.9rem;">Credit card</span>
           </div>
-          <span style="font-size:0.75rem; color:#aaa;">VISA / MC / Pay</span>
-        </label>
-
-        <div id="stripeFields" style="padding:15px; background:#111;">
-          <!-- Campo seguro oficial de Stripe -->
-          <div id="card-element" style="padding:10px; background:#222; border-radius:4px;"></div>
-          <div id="card-errors" style="color:#ff4d4d; font-size:0.8rem; margin-top:8px;" role="alert"></div>
+          <div style="display:flex; gap:4px;">
+            <span class="card-badge">VISA</span>
+            <span class="card-badge mc">MC</span>
+            <span class="card-badge amex">AMEX</span>
+          </div>
         </div>
 
-        <!-- Opción 2: Zelle -->
-        <label style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#1a1a1a; cursor:pointer;">
-          <div>
-            <input type="radio" name="payment_method" value="zelle" onclick="togglePaymentFields('zelle')">
-            <span style="font-weight:bold; margin-left:8px; font-size:0.9rem;">Zelle Transfer</span>
+        <div id="stripeFields" class="payment-body">
+          <div id="card-element" style="padding:12px; background:#fff; border:1px solid #d9d9d9; border-radius:6px;"></div>
+          <div id="card-errors" style="color:#e53e3e; font-size:0.8rem; margin-top:6px;" role="alert"></div>
+          
+          <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:0.8rem; color:#444; cursor:pointer;">
+            <input type="checkbox" checked accent-color="#000"> Use shipping address as billing address
+          </label>
+        </div>
+
+        <!-- Opción: Apple Pay -->
+        <div class="payment-option-header" onclick="document.getElementById('pay_apple').click()">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" id="pay_apple" name="payment_method" value="stripe" onclick="togglePaymentFields('stripe')">
+            <span style="font-weight:600; font-size:0.9rem;">Apple Pay</span>
+          </div>
+          <span style="font-weight:bold; font-size:0.9rem;">Pay</span>
+        </div>
+
+        <!-- Opción: Zelle -->
+        <div class="payment-option-header" onclick="document.getElementById('pay_zelle').click()">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" id="pay_zelle" name="payment_method" value="zelle" onclick="togglePaymentFields('zelle')">
+            <span style="font-weight:600; font-size:0.9rem;">Zelle Transfer</span>
           </div>
           <span style="color:#7414ca; font-weight:bold; font-size:0.85rem;">zelle</span>
-        </label>
+        </div>
 
-        <div id="zelleFields" style="padding:15px; background:#111; display:none; font-size:0.85rem; color:#ccc;">
-          Envía el total de tu orden a nuestro Zelle: <strong>+1 (714) 381 9023</strong>. Coloca tu nombre en la nota.
+        <div id="zelleFields" class="payment-body" style="display:none; font-size:0.85rem; color:#444;">
+          Envía tu pago a: <strong>+1 (714) 381 9023</strong>.
         </div>
 
       </div>
 
-      <button class="checkout-btn" id="payBtn" onclick="processPayment()">PAY NOW</button>
+      <!-- TOTAL Y BOTÓN -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding-top:10px; border-top:1px solid #e6e6e6;">
+        <span style="font-weight:700; font-size:1.1rem;">Total</span>
+        <span style="font-weight:800; font-size:1.2rem;" id="checkoutTotal">$0.00 USD</span>
+      </div>
+
+      <button id="payBtn" onclick="processPayment()" style="background:#000; color:#fff; border:none; border-radius:8px; padding:16px; font-size:1rem; font-weight:700; width:100%; margin-top:15px; cursor:pointer;">Pay now</button>
     </div>
   </div>
 
   <!-- SCRIPTS Y LÓGICA -->
   <script>
-    // -------------------------------------------------------------
-    // CONFIGURACIÓN DE STRIPE (PUBLISHABLE KEY DE PRODUCCIÓN)
+    // CONFIGURACIÓN DE STRIPE
     const STRIPE_PUBLISHABLE_KEY = 'pk_live_51TybDhLwe6dh6ocORfqtZjlzLrmr6o6p5ek7YyaAUSXTbI4VSpQHrawrGqBCDXlhNXVzgCtQ8bfL1mnFEWQNSHmh0023zd9CtW'; 
-    // -------------------------------------------------------------
 
     let stripe;
     let elements;
@@ -447,27 +526,23 @@
       cardElement = elements.create('card', {
         style: {
           base: {
-            color: '#ffffff',
+            color: '#111111',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            fontSize: '16px',
+            fontSize: '15px',
             '::placeholder': { color: '#888888' }
           },
-          invalid: { color: '#ff4d4d' }
+          invalid: { color: '#e53e3e' }
         }
       });
       cardElement.mount('#card-element');
 
       cardElement.on('change', (event) => {
         const displayError = document.getElementById('card-errors');
-        if (event.error) {
-          displayError.textContent = event.error.message;
-        } else {
-          displayError.textContent = '';
-        }
+        displayError.textContent = event.error ? event.error.message : '';
       });
     }
 
-    // --- 1. ESCENA THREE.JS (FONDO 3D) ---
+    // 1. FONDO 3D (THREE.JS)
     const canvas = document.getElementById('canvas3d');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -505,7 +580,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // --- 2. LÓGICA DE TIENDA Y CHECKOUT ---
+    // 2. LÓGICA DE TIENDA
     let cart = [];
 
     function checkAccess() {
@@ -550,6 +625,7 @@
 
       cartItems.innerHTML = html;
       cartTotal.innerText = `$${total}.00 USD`;
+      document.getElementById('checkoutTotal').innerText = `$${total}.00 USD`;
     }
 
     function openCheckout() {
@@ -570,7 +646,7 @@
       document.getElementById('zelleFields').style.display = (method === 'zelle') ? 'block' : 'none';
     }
 
-    // --- 3. PROCESAR PAGO REAL DE STRIPE ---
+    // 3. PROCESAR PAGO STRIPE
     async function processPayment() {
       const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
 
@@ -586,7 +662,7 @@
       }
 
       const payBtn = document.getElementById('payBtn');
-      payBtn.innerText = "PROCESANDO...";
+      payBtn.innerText = "Processing...";
       payBtn.disabled = true;
 
       const { paymentMethod: stripeMethod, error } = await stripe.createPaymentMethod({
@@ -596,17 +672,17 @@
 
       if (error) {
         document.getElementById('card-errors').textContent = error.message;
-        payBtn.innerText = "PAY NOW";
+        payBtn.innerText = "Pay now";
         payBtn.disabled = false;
       } else {
-        alert('¡Pago procesado con éxito en Stripe!\nToken generado: ' + stripeMethod.id);
-        payBtn.innerText = "PAY NOW";
+        alert('¡Pago procesado con éxito en Stripe!\nID: ' + stripeMethod.id);
+        payBtn.innerText = "Pay now";
         payBtn.disabled = false;
         closeCheckout();
       }
     }
 
-    // ATAJO TECLADO PANEL ADMIN (Ctrl + Shift + A)
+    // 4. DRAG AND DROP ADMIN Y ATAJO (Ctrl + Shift + A)
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
         document.getElementById('adminModal').style.display = 'flex';
@@ -616,6 +692,31 @@
     function closeAdmin() {
       document.getElementById('adminModal').style.display = 'none';
     }
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eName => {
+      dropZone.addEventListener(eName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+
+    dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
+    ['dragleave', 'drop'].forEach(eName => dropZone.classList.remove('dragover'));
+
+    dropZone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        document.getElementById('dropText').innerText = "Imagen cargada: " + files[0].name;
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        document.getElementById('dropText').innerText = "Imagen cargada: " + fileInput.files[0].name;
+      }
+    });
   </script>
 </body>
 </html>
