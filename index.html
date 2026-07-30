@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -855,7 +855,6 @@
         return;
       }
 
-      // Si todo sale bien con la tarjeta en Stripe
       triggerPaymentSuccessUI();
       payBtn.innerText = "Pay now";
       payBtn.disabled = false;
@@ -987,42 +986,45 @@
         <div class="product-title">${name}</div>
         <div class="product-price">$${price.toFixed(2)} USD</div>
         <select class="size-selector">
-          <option>S</option><option>M</option><option>L</option><option>XL</option>
+          <option>Standard</option>
         </select>
         <button class="add-btn" onclick="addToCart('${name}', ${price})">ADD TO CART</button>
       `;
 
       grid.appendChild(newCard);
-      actualizarListaEliminarAdmin();
-      alert("Producto agregado correctamente.");
+      alert("¡Producto agregado con éxito!");
       
+      // Limpiar campos
       document.getElementById('newProdName').value = '';
       document.getElementById('newProdPrice').value = '';
       document.getElementById('imgPreview').style.display = 'none';
+      selectedImageBase64 = "https://via.placeholder.com/400x400";
+      closeAdmin();
     }
 
     function actualizarListaEliminarAdmin() {
       const list = document.getElementById('adminDeleteList');
-      list.innerHTML = '';
       const cards = document.querySelectorAll('.product-card');
+      let html = '';
 
       cards.forEach(card => {
-        const id = card.getAttribute('data-id');
         const title = card.querySelector('.product-title').innerText;
-        const li = document.createElement('li');
-        li.innerHTML = `
+        const id = card.getAttribute('data-id');
+        html += `<li>
           <span>${title}</span>
-          <button class="btn-delete" onclick="removeProduct('${id}')">Eliminar</button>
-        `;
-        list.appendChild(li);
+          <button class="btn-delete" onclick="eliminarProducto('${id}')">Eliminar</button>
+        </li>`;
       });
+
+      list.innerHTML = html;
     }
 
-    function removeProduct(id) {
-      const card = document.querySelector(`.product-card[data-id="${id}"]`);
+    function eliminarProducto(id) {
+      const card = document.querySelector(`[data-id="${id}"]`);
       if (card) {
         card.remove();
         actualizarListaEliminarAdmin();
+        alert("Producto eliminado.");
       }
     }
   </script>
