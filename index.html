@@ -232,7 +232,7 @@
       right: 0;
     }
 
-    /* CHECKOUT MODAL ESTILO SHOPIFY (CLARO Y LIMPIO) */
+    /* CHECKOUT MODAL ESTILO SHOPIFY */
     .checkout-modal {
       position: fixed;
       top: 0; left: 0;
@@ -417,8 +417,14 @@
         <button onclick="closeCheckout()" style="background:none; border:none; color:#111; font-size:1.4rem; cursor:pointer;">✕</button>
       </div>
 
+      <!-- SECCIÓN CONTACTO -->
+      <h4 style="font-size:1rem; font-weight:700; margin-bottom:10px;">Contact</h4>
+      <div class="form-group-shopify">
+        <input type="email" id="custEmail" placeholder="Email address for order confirmation">
+      </div>
+
       <!-- SECCIÓN DELIVERY -->
-      <h4 style="font-size:1rem; font-weight:700; margin-bottom:10px;">Delivery</h4>
+      <h4 style="font-size:1rem; font-weight:700; margin-top:15px; margin-bottom:10px;">Delivery</h4>
       
       <div class="form-group-shopify">
         <input type="text" placeholder="Country / Region" value="United States" readonly>
@@ -508,6 +514,27 @@
       </div>
 
       <button id="payBtn" onclick="processPayment()" style="background:#000; color:#fff; border:none; border-radius:8px; padding:16px; font-size:1rem; font-weight:700; width:100%; margin-top:15px; cursor:pointer;">Pay now</button>
+    </div>
+  </div>
+
+  <!-- FOOTER PIE DE PÁGINA -->
+  <footer style="position: relative; z-index: 10; padding: 40px 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 80px; text-align: center; color: #888; font-size: 0.85rem;">
+    <p>© 2026 GRAND HUSTLES. All rights reserved.</p>
+    <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+      <a href="#" onclick="openLegalModal('terms')" style="color: #aaa; text-decoration: none;">Terms & Conditions</a>
+      <a href="#" onclick="openLegalModal('privacy')" style="color: #aaa; text-decoration: none;">Privacy Policy</a>
+      <a href="#" onclick="openLegalModal('shipping')" style="color: #aaa; text-decoration: none;">Shipping & Refunds</a>
+    </div>
+  </footer>
+
+  <!-- MODAL LEGAL -->
+  <div id="legalModal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #111; color: #fff; border: 1px solid #333; border-radius: 12px; padding: 30px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 id="legalTitle" style="font-size: 1.2rem; font-weight: bold;">Términos y Condiciones</h3>
+        <button onclick="closeLegalModal()" style="background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer;">✕</button>
+      </div>
+      <div id="legalContent" style="font-size: 0.9rem; color: #ccc; line-height: 1.6;"></div>
     </div>
   </div>
 
@@ -665,7 +692,7 @@
       payBtn.innerText = "Processing...";
       payBtn.disabled = true;
 
-      // 1. Crear Método de pago en el cliente
+      // Crear Método de pago en el cliente
       const { paymentMethod: stripeMethod, error } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
@@ -678,12 +705,12 @@
         return;
       }
 
-      // 2. Calcular total del carrito
+      // Calcular total del carrito
       let totalAmount = 0;
       cart.forEach(item => { totalAmount += item.price; });
       if (totalAmount <= 0) totalAmount = 1;
 
-      // 3. Enviar a Vercel Backend (/api/charge)
+      // Enviar a Vercel Backend (/api/charge)
       try {
         const response = await fetch('/api/charge', {
           method: 'POST',
@@ -747,6 +774,41 @@
         document.getElementById('dropText').innerText = "Imagen cargada: " + fileInput.files[0].name;
       }
     });
+
+    // 5. DOCUMENTOS LEGALES
+    const legalDocs = {
+      terms: `
+        <h4>1. General</h4>
+        <p>Al acceder a GRAND HUSTLES, aceptas cumplir con nuestros términos de servicio. Nos reservamos el derecho de modificar o cancelar pedidos en cualquier momento.</p>
+        <br>
+        <h4>2. Ediciones Limitadas</h4>
+        <p>Todos nuestros productos son lanzamientos exclusivos en cantidades limitadas. La disponibilidad no está garantizada hasta completar el pago exitosamente.</p>
+      `,
+      privacy: `
+        <h4>Política de Privacidad</h4>
+        <p>Tus datos personales (nombre, dirección y correo) solo son utilizados para el procesamiento y envío de tu pedido. Los datos de pago son procesados de forma cifrada a través de Stripe y nunca son almacenados en nuestros servidores.</p>
+      `,
+      shipping: `
+        <h4>Envíos y Devoluciones</h4>
+        <p><strong>Envíos:</strong> Los pedidos tardan entre 3 y 5 días hábiles en ser procesados y enviados.</p>
+        <p><strong>Devoluciones:</strong> Debido a la naturaleza de lanzamientos limitados, <strong>todas las ventas son finales</strong>. No aceptamos cambios ni devoluciones a menos que el producto presente un defecto de fábrica.</p>
+      `
+    };
+
+    function openLegalModal(type) {
+      const titles = {
+        terms: 'Terms & Conditions',
+        privacy: 'Privacy Policy',
+        shipping: 'Shipping & Refund Policy'
+      };
+      document.getElementById('legalTitle').innerText = titles[type];
+      document.getElementById('legalContent').innerHTML = legalDocs[type];
+      document.getElementById('legalModal').style.display = 'flex';
+    }
+
+    function closeLegalModal() {
+      document.getElementById('legalModal').style.display = 'none';
+    }
   </script>
 </body>
 </html>
