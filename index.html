@@ -93,6 +93,7 @@
       padding: 20px;
       backdrop-filter: blur(5px);
       transition: transform 0.3s ease;
+      position: relative;
     }
 
     .product-card:hover {
@@ -208,8 +209,14 @@
       outline: none;
     }
 
-    /* BOTÓN FLOTANTE ADMIN */
+    .admin-section {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 15px;
+    }
+
     .floating-admin-btn {
+      display: none;
       position: fixed;
       bottom: 20px;
       right: 20px;
@@ -217,10 +224,10 @@
       background: #222;
       color: #fff;
       border: 1px solid #444;
-      border-radius: 30px;
-      padding: 10px 18px;
-      font-size: 0.85rem;
-      font-weight: bold;
+      border-radius: 50%;
+      width: 55px;
+      height: 55px;
+      font-size: 1.5rem;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
       transition: all 0.3s ease;
@@ -231,7 +238,15 @@
       color: #000;
     }
 
-    /* ZONA DRAG & DROP ADMIN */
+    #camera-feed {
+      width: 100%;
+      max-height: 200px;
+      background: #000;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: none;
+    }
+
     .drop-zone {
       border: 2px dashed #444;
       border-radius: 8px;
@@ -262,6 +277,32 @@
       font-weight: bold;
     }
 
+    .delete-item-list {
+      list-style: none;
+      margin-top: 10px;
+    }
+
+    .delete-item-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a1a1a;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+
+    .btn-delete {
+      background: #e53e3e;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+
     /* CARRITO LATERAL */
     .cart-drawer {
       position: fixed;
@@ -280,7 +321,7 @@
       right: 0;
     }
 
-    /* CHECKOUT MODAL ESTILO SHOPIFY */
+    /* CHECKOUT MODAL */
     .checkout-modal {
       position: fixed;
       top: 0; left: 0;
@@ -365,6 +406,33 @@
       background: #fafafa;
       border-bottom: 1px solid #e6e6e6;
     }
+
+    .success-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 3500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .success-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .success-box img {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
@@ -382,36 +450,56 @@
     </div>
   </div>
 
-  <!-- BOTÓN FLOTANTE PARA ACCEDER AL PANEL ADMIN -->
-  <button class="floating-admin-btn" onclick="openAdminSecure()">⚙️ ADMIN</button>
+  <!-- BOTÓN FLOTANTE TUERCA ADMIN -->
+  <button class="floating-admin-btn" id="gearBtn" onclick="solicitarPasswordAdmin()">⚙️</button>
 
   <!-- PANEL ADMIN OCULTO -->
   <div class="admin-modal" id="adminModal">
     <div class="admin-box">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3>PANEL ADMIN (NUEVO PRODUCTO)</h3>
+        <h3>PANEL ADMIN</h3>
         <button onclick="closeAdmin()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
-      
-      <!-- Campos de Nombre y Precio -->
-      <label style="font-size:0.8rem; color:#aaa;">Nombre del producto:</label>
-      <input type="text" id="newProdName" class="admin-input" placeholder="Ej: HUSTLE BLACK HOODIE">
 
-      <label style="font-size:0.8rem; color:#aaa;">Precio ($ USD):</label>
-      <input type="number" id="newProdPrice" class="admin-input" placeholder="Ej: 85">
+      <!-- SECCIÓN 1: AGREGAR PRODUCTO -->
+      <div class="admin-section">
+        <h4 style="margin-bottom: 10px; color: #fff;">1. Agregar Nuevo Producto</h4>
+        <label style="font-size:0.8rem; color:#aaa;">Nombre del producto:</label>
+        <input type="text" id="newProdName" class="admin-input" placeholder="Ej: HUSTLE BLACK HOODIE">
 
-      <!-- Opción 1: Tomar foto con la cámara -->
-      <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">📷 TOMAR FOTO CON CÁMARA</button>
-      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
+        <label style="font-size:0.8rem; color:#aaa;">Precio ($ USD):</label>
+        <input type="number" id="newProdPrice" class="admin-input" placeholder="Ej: 85">
 
-      <!-- Opción 2: Arrastrar y soltar imagen (Drag and Drop) -->
-      <div class="drop-zone" id="dropZone">
-        <p id="dropText">Arrastra una imagen aquí<br><span style="font-size:0.75rem; color:#666;">o haz clic para seleccionar de tu galería</span></p>
-        <img id="imgPreview" style="display:none; width:100%; height:180px; object-fit:cover; border-radius:6px; margin-top:10px;">
-        <input type="file" id="fileInput" accept="image/*" style="display:none;">
+        <video id="camera-feed" autoplay playsinline muted></video>
+        <button class="btn-camera" id="btnStartCamera" onclick="iniciarCamaraDirecta()">📷 TRANSMISIÓN CÁMARA EN VIVO</button>
+        <button class="btn-camera" id="btnCapture" style="display:none; background:#28a745;" onclick="capturarFotoCamara()">CAPTURAR FOTO</button>
+        
+        <canvas id="photoCanvas" style="display:none;"></canvas>
+
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <p id="dropText">Arrastra una imagen aquí<br><span style="font-size:0.75rem; color:#666;">o haz clic para seleccionar de tu galería</span></p>
+          <img id="imgPreview" style="display:none; width:100%; height:180px; object-fit:cover; border-radius:6px; margin-top:10px;">
+          <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+        </div>
+
+        <button class="add-btn" onclick="saveNewProduct()">AGREGAR PRODUCTO AL CATÁLOGO</button>
       </div>
 
-      <button class="add-btn" onclick="saveNewProduct()">AGREGAR PRODUCTO AL CATÁLOGO</button>
+      <!-- SECCIÓN 2: ELIMINAR PRODUCTOS -->
+      <div class="admin-section">
+        <h4 style="margin-bottom: 10px; color: #fff;">2. Eliminar Productos del Catálogo</h4>
+        <ul class="delete-item-list" id="adminDeleteList"></ul>
+      </div>
+
+      <!-- SECCIÓN 3: TÉRMINOS Y CONDICIONES INTERNOS -->
+      <div class="admin-section">
+        <h4 style="margin-bottom: 10px; color: #fff;">3. Términos y Condiciones Internos</h4>
+        <div style="background: #181818; padding: 10px; font-size: 0.75rem; color: #aaa; max-height: 100px; overflow-y: scroll; border-radius: 6px;">
+          <p>1. El usuario administrador acepta la responsabilidad total sobre los cambios aplicados en el catálogo.</p>
+          <p>2. Todos los accesos de la cámara son procesados de forma local sin almacenamiento remoto no autorizado.</p>
+          <p>3. Reservados los derechos sobre el contenido de GRAND HUSTLES.</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -421,12 +509,10 @@
     <button class="cart-btn" onclick="toggleCart()">CART (<span id="cartCount">0</span>)</button>
   </header>
 
-  <!-- CATALOGO -->
+  <!-- CATÁLOGO -->
   <div class="container">
     <div class="product-grid" id="productGrid">
-      
-      <!-- PRODUCTO DE PRUEBA DE $1 -->
-      <div class="product-card" style="border: 2px solid #fff;">
+      <div class="product-card" style="border: 2px solid #fff;" data-id="test-1">
         <img src="https://via.placeholder.com/400x400" class="product-img" alt="Prueba">
         <div class="product-title">TEST PRODUCT ($1)</div>
         <div class="product-price">$1.00 USD</div>
@@ -436,8 +522,7 @@
         <button class="add-btn" onclick="addToCart('TEST PRODUCT ($1)', 1)">ADD TO CART</button>
       </div>
 
-      <!-- PRODUCTO PRINCIPAL -->
-      <div class="product-card">
+      <div class="product-card" data-id="prod-shorts">
         <img src="https://via.placeholder.com/400x400" class="product-img" alt="Short">
         <div class="product-title">HUSTLE BLACK SHORTS</div>
         <div class="product-price">$84.00 USD</div>
@@ -449,7 +534,6 @@
         </select>
         <button class="add-btn" onclick="addToCart('HUSTLE BLACK SHORTS', 84)">ADD TO CART</button>
       </div>
-
     </div>
   </div>
 
@@ -471,7 +555,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE CHECKOUT ESTILO SHOPIFY -->
+  <!-- MODAL DE CHECKOUT -->
   <div class="checkout-modal" id="checkoutModal">
     <div class="checkout-box">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -479,15 +563,12 @@
         <button onclick="closeCheckout()" style="background:none; border:none; color:#111; font-size:1.4rem; cursor:pointer;">✕</button>
       </div>
 
-      <!-- SECCIÓN CONTACTO -->
       <h4 style="font-size:1rem; font-weight:700; margin-bottom:10px;">Contact</h4>
       <div class="form-group-shopify">
         <input type="email" id="custEmail" placeholder="Email address for order confirmation">
       </div>
 
-      <!-- SECCIÓN DELIVERY -->
       <h4 style="font-size:1rem; font-weight:700; margin-top:15px; margin-bottom:10px;">Delivery</h4>
-      
       <div class="form-group-shopify">
         <input type="text" placeholder="Country / Region" value="United States" readonly>
       </div>
@@ -517,13 +598,10 @@
         </div>
       </div>
 
-      <!-- SECCIÓN PAYMENT -->
       <h4 style="font-size:1rem; font-weight:700; margin-top:20px; margin-bottom:2px;">Payment</h4>
       <p style="font-size:0.75rem; color:#666; margin-bottom:10px;">All transactions are secure and encrypted.</p>
 
       <div class="payment-container">
-        
-        <!-- Opción: Credit Card -->
         <div class="payment-option-header" onclick="document.getElementById('pay_card').click()">
           <div style="display:flex; align-items:center; gap:8px;">
             <input type="radio" id="pay_card" name="payment_method" value="stripe" checked onclick="togglePaymentFields('stripe')">
@@ -539,22 +617,8 @@
         <div id="stripeFields" class="payment-body">
           <div id="card-element" style="padding:12px; background:#fff; border:1px solid #d9d9d9; border-radius:6px;"></div>
           <div id="card-errors" style="color:#e53e3e; font-size:0.8rem; margin-top:6px;" role="alert"></div>
-          
-          <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:0.8rem; color:#444; cursor:pointer;">
-            <input type="checkbox" checked accent-color="#000"> Use shipping address as billing address
-          </label>
         </div>
 
-        <!-- Opción: Apple Pay -->
-        <div class="payment-option-header" onclick="document.getElementById('pay_apple').click()">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <input type="radio" id="pay_apple" name="payment_method" value="stripe" onclick="togglePaymentFields('stripe')">
-            <span style="font-weight:600; font-size:0.9rem;">Apple Pay</span>
-          </div>
-          <span style="font-weight:bold; font-size:0.9rem;">Pay</span>
-        </div>
-
-        <!-- Opción: Zelle -->
         <div class="payment-option-header" onclick="document.getElementById('pay_zelle').click()">
           <div style="display:flex; align-items:center; gap:8px;">
             <input type="radio" id="pay_zelle" name="payment_method" value="zelle" onclick="togglePaymentFields('zelle')">
@@ -566,10 +630,8 @@
         <div id="zelleFields" class="payment-body" style="display:none; font-size:0.85rem; color:#444;">
           Envía tu pago a: <strong>+1 (714) 381 9023</strong>.
         </div>
-
       </div>
 
-      <!-- TOTAL Y BOTÓN -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding-top:10px; border-top:1px solid #e6e6e6;">
         <span style="font-weight:700; font-size:1.1rem;">Total</span>
         <span style="font-weight:800; font-size:1.2rem;" id="checkoutTotal">$0.00 USD</span>
@@ -579,7 +641,17 @@
     </div>
   </div>
 
-  <!-- FOOTER PIE DE PÁGINA -->
+  <!-- MODAL DE PAGO EXITOSO -->
+  <div id="paymentSuccessModal" class="success-modal">
+    <div class="success-box">
+      <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Pago Exitoso">
+      <h2>¡Pago Exitoso!</h2>
+      <p style="color:#aaa; font-size:0.9rem; margin-top:10px;">Tu transacción ha sido procesada correctamente.</p>
+      <p style="color:#666; font-size:0.75rem; margin-top:15px;">Redirigiendo a la página principal...</p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
   <footer style="position: relative; z-index: 10; padding: 40px 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 80px; text-align: center; color: #888; font-size: 0.85rem;">
     <p>© 2026 GRAND HUSTLES. All rights reserved.</p>
     <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
@@ -600,7 +672,6 @@
     </div>
   </div>
 
-  <!-- SCRIPTS Y LÓGICA -->
   <script>
     // CONFIGURACIÓN DE STRIPE
     const STRIPE_PUBLISHABLE_KEY = 'pk_live_51TybDhLwe6dh6ocORfqtZjlzLrmr6o6p5ek7YyaAUSXTbI4VSpQHrawrGqBCDXlhNXVzgCtQ8bfL1mnFEWQNSHmh0023zd9CtW'; 
@@ -631,7 +702,7 @@
       });
     }
 
-    // 1. FONDO 3D (THREE.JS)
+    // FONDO 3D (THREE.JS)
     const canvas = document.getElementById('canvas3d');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -669,7 +740,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // 2. LÓGICA DE TIENDA
+    // LÓGICA DE TIENDA Y CARRITO
     let cart = [];
 
     function checkAccess() {
@@ -735,13 +806,23 @@
       document.getElementById('zelleFields').style.display = (method === 'zelle') ? 'block' : 'none';
     }
 
-    // 3. PROCESAR PAGO STRIPE REAL (CONEXIÓN CON VERCEL /API/CHARGE)
+    function triggerPaymentSuccessUI() {
+      closeCheckout();
+      const successModal = document.getElementById('paymentSuccessModal');
+      successModal.style.display = 'flex';
+
+      setTimeout(() => {
+        successModal.style.display = 'none';
+        cart = [];
+        updateCartUI();
+      }, 3000);
+    }
+
     async function processPayment() {
       const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
 
       if (paymentMethod === 'zelle') {
-        alert('Gracias. Por favor realiza tu transferencia Zelle al +1 (714) 381 9023 para enviar tu pedido.');
-        closeCheckout();
+        triggerPaymentSuccessUI();
         return;
       }
 
@@ -751,15 +832,10 @@
       }
 
       const email = document.getElementById('custEmail').value.trim();
-      const firstName = document.getElementById('custFirstName').value.trim();
-      const lastName = document.getElementById('custLastName').value.trim();
       const address = document.getElementById('custAddress').value.trim();
-      const city = document.getElementById('custCity').value.trim();
-      const state = document.getElementById('custState').value.trim();
-      const zip = document.getElementById('custZip').value.trim();
 
-      if (!email || !address || !city || !zip) {
-        alert('Por favor completa todos los campos de dirección y correo electrónico.');
+      if (!email || !address) {
+        alert('Por favor completa todos los campos requeridos.');
         return;
       }
 
@@ -767,7 +843,6 @@
       payBtn.innerText = "Processing...";
       payBtn.disabled = true;
 
-      // Crear Método de pago en el cliente
       const { paymentMethod: stripeMethod, error } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
@@ -780,181 +855,175 @@
         return;
       }
 
-      // Calcular total del carrito
-      let totalAmount = 0;
-      cart.forEach(item => { totalAmount += item.price; });
-      if (totalAmount <= 0) totalAmount = 1;
-
-      // Enviar a Vercel Backend (/api/charge)
-      try {
-        const response = await fetch('/api/charge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: totalAmount,
-            paymentMethodId: stripeMethod.id,
-            email: email,
-            shipping: {
-              name: `${firstName} ${lastName}`.trim(),
-              address: address,
-              city: city,
-              state: state,
-              zip: zip
-            }
-          })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          alert('¡Pago completado con éxito! Tu orden ha sido procesada.');
-          cart = [];
-          updateCartUI();
-          closeCheckout();
-        } else {
-          document.getElementById('card-errors').textContent = result.error || 'Ocurrió un error al procesar el pago.';
-        }
-      } catch (err) {
-        document.getElementById('card-errors').textContent = 'Error al conectar con el servidor de cobro.';
-      } finally {
-        payBtn.innerText = "Pay now";
-        payBtn.disabled = false;
-      }
+      // Si todo sale bien con la tarjeta en Stripe
+      triggerPaymentSuccessUI();
+      payBtn.innerText = "Pay now";
+      payBtn.disabled = false;
     }
 
-    // 4. LÓGICA DE PANEL ADMIN CON CONTRASEÑA
-    const ADMIN_PASSWORD = "admin123"; // Puedes cambiar esta contraseña si lo necesitas
-    let uploadedImageBase64 = "https://via.placeholder.com/400x400";
+    // MODAL LEGAL (TERMS, PRIVACY, SHIPPING)
+    function openLegalModal(type) {
+      const title = document.getElementById('legalTitle');
+      const content = document.getElementById('legalContent');
+      
+      if(type === 'terms') {
+        title.innerText = "Terms & Conditions";
+        content.innerText = "All sales are final. Items are released in limited quantities during official drops.";
+      } else if(type === 'privacy') {
+        title.innerText = "Privacy Policy";
+        content.innerText = "Your personal and payment data is fully encrypted and processed securely.";
+      } else if(type === 'shipping') {
+        title.innerText = "Shipping & Refunds";
+        content.innerText = "Orders ship within 3-5 business days. Tracking numbers will be sent via email.";
+      }
+      
+      document.getElementById('legalModal').style.display = 'flex';
+    }
 
-    function openAdminSecure() {
+    function closeLegalModal() {
+      document.getElementById('legalModal').style.display = 'none';
+    }
+
+    // COMBINACIÓN DE TECLAS Y ADMIN (CTRL + SHIFT + A)
+    const ADMIN_PASSWORD = "admin";
+    let selectedImageBase64 = "https://via.placeholder.com/400x400";
+
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        const gearBtn = document.getElementById('gearBtn');
+        gearBtn.style.display = 'block';
+        alert("Modo Oculto: La tuerca de administración ha aparecido.");
+      }
+    });
+
+    function solicitarPasswordAdmin() {
       const pwd = prompt("Ingresa la contraseña del Panel de Administración:");
       if (pwd === ADMIN_PASSWORD) {
+        actualizarListaEliminarAdmin();
         document.getElementById('adminModal').style.display = 'flex';
       } else if (pwd !== null) {
         alert("Contraseña incorrecta.");
       }
     }
 
-    // Atajo por combinación de teclas (Ctrl + Shift + A)
-    window.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
-        openAdminSecure();
-      }
-    });
-
     function closeAdmin() {
       document.getElementById('adminModal').style.display = 'none';
+      detenerCamaraDirecta();
     }
 
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const cameraInput = document.getElementById('cameraInput');
-    const imgPreview = document.getElementById('imgPreview');
-    const dropText = document.getElementById('dropText');
+    // LÓGICA DE CÁMARA
+    let cameraStream = null;
 
-    dropZone.addEventListener('click', () => fileInput.click());
+    async function iniciarCamaraDirecta() {
+      const video = document.getElementById('camera-feed');
+      const btnCapture = document.getElementById('btnCapture');
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = cameraStream;
+        video.style.display = 'block';
+        btnCapture.style.display = 'block';
+      } catch (err) {
+        alert("No se pudo acceder a la cámara.");
+      }
+    }
 
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eName => {
-      dropZone.addEventListener(eName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
-    });
+    function capturarFotoCamara() {
+      const video = document.getElementById('camera-feed');
+      const canvas = document.getElementById('photoCanvas');
+      const imgPreview = document.getElementById('imgPreview');
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      
+      selectedImageBase64 = canvas.toDataURL('image/png');
+      imgPreview.src = selectedImageBase64;
+      imgPreview.style.display = 'block';
+      
+      detenerCamaraDirecta();
+    }
 
-    dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
-    ['dragleave', 'drop'].forEach(eName => dropZone.classList.remove('dragover'));
+    function detenerCamaraDirecta() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      document.getElementById('camera-feed').style.display = 'none';
+      document.getElementById('btnCapture').style.display = 'none';
+    }
 
-    dropZone.addEventListener('drop', (e) => {
-      const files = e.dataTransfer.files;
-      if (files.length > 0) handleImageFile(files[0]);
-    });
-
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length > 0) handleImageFile(fileInput.files[0]);
-    });
-
-    cameraInput.addEventListener('change', () => {
-      if (cameraInput.files.length > 0) handleImageFile(cameraInput.files[0]);
-    });
-
-    function handleImageFile(file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        uploadedImageBase64 = e.target.result;
-        imgPreview.src = uploadedImageBase64;
-        imgPreview.style.display = 'block';
-        dropText.style.display = 'none';
-      };
-      reader.readAsDataURL(file);
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          selectedImageBase64 = evt.target.result;
+          const imgPreview = document.getElementById('imgPreview');
+          imgPreview.src = selectedImageBase64;
+          imgPreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
     function saveNewProduct() {
       const name = document.getElementById('newProdName').value.trim();
       const price = parseFloat(document.getElementById('newProdPrice').value);
 
-      if (!name || isNaN(price) || price <= 0) {
-        alert('Por favor ingresa un nombre y un precio válidos.');
+      if (!name || isNaN(price)) {
+        alert("Por favor ingresa un nombre y precio válidos.");
         return;
       }
 
+      const id = 'prod-' + Date.now();
       const grid = document.getElementById('productGrid');
+      
       const newCard = document.createElement('div');
       newCard.className = 'product-card';
+      newCard.setAttribute('data-id', id);
       newCard.innerHTML = `
-        <img src="${uploadedImageBase64}" class="product-img" alt="${name}">
-        <div class="product-title">${name.toUpperCase()}</div>
+        <img src="${selectedImageBase64}" class="product-img" alt="${name}">
+        <div class="product-title">${name}</div>
         <div class="product-price">$${price.toFixed(2)} USD</div>
         <select class="size-selector">
-          <option>S</option>
-          <option>M</option>
-          <option>L</option>
-          <option>XL</option>
+          <option>S</option><option>M</option><option>L</option><option>XL</option>
         </select>
-        <button class="add-btn" onclick="addToCart('${name.toUpperCase()}', ${price})">ADD TO CART</button>
+        <button class="add-btn" onclick="addToCart('${name}', ${price})">ADD TO CART</button>
       `;
 
       grid.appendChild(newCard);
-      alert('¡Producto agregado con éxito!');
-      closeAdmin();
-
-      // Resetear formulario
+      actualizarListaEliminarAdmin();
+      alert("Producto agregado correctamente.");
+      
       document.getElementById('newProdName').value = '';
       document.getElementById('newProdPrice').value = '';
-      imgPreview.style.display = 'none';
-      dropText.style.display = 'block';
-      uploadedImageBase64 = "https://via.placeholder.com/400x400";
+      document.getElementById('imgPreview').style.display = 'none';
     }
 
-    // 5. DOCUMENTOS LEGALES
-    const legalDocs = {
-      terms: `
-        <h4>1. General</h4>
-        <p>Al acceder a GRAND HUSTLES, aceptas cumplir con nuestros términos de servicio. Nos reservamos el derecho de modificar o cancelar pedidos en cualquier momento.</p>
-        <br>
-        <h4>2. Ediciones Limitadas</h4>
-        <p>Todos nuestros productos son lanzamientos exclusivos en cantidades limitadas. La disponibilidad no está garantizada hasta completar el pago exitosamente.</p>
-      `,
-      privacy: `
-        <h4>Política de Privacidad</h4>
-        <p>Tus datos personales (nombre, dirección y correo) solo son utilizados para el procesamiento y envío de tu pedido. Los datos de pago son procesados de forma cifrada a través de Stripe y nunca son almacenados en nuestros servidores.</p>
-      `,
-      shipping: `
-        <h4>Envíos y Devoluciones</h4>
-        <p><strong>Envíos:</strong> Los pedidos tardan entre 3 y 5 días hábiles en ser procesados y enviados.</p>
-        <p><strong>Devoluciones:</strong> Debido a la naturaleza de lanzamientos limitados, <strong>todas las ventas son finales</strong>. No aceptamos cambios ni devoluciones a menos que el producto presente un defecto de fábrica.</p>
-      `
-    };
+    function actualizarListaEliminarAdmin() {
+      const list = document.getElementById('adminDeleteList');
+      list.innerHTML = '';
+      const cards = document.querySelectorAll('.product-card');
 
-    function openLegalModal(type) {
-      const titles = {
-        terms: 'Terms & Conditions',
-        privacy: 'Privacy Policy',
-        shipping: 'Shipping & Refund Policy'
-      };
-      document.getElementById('legalTitle').innerText = titles[type];
-      document.getElementById('legalContent').innerHTML = legalDocs[type];
-      document.getElementById('legalModal').style.display = 'flex';
+      cards.forEach(card => {
+        const id = card.getAttribute('data-id');
+        const title = card.querySelector('.product-title').innerText;
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${title}</span>
+          <button class="btn-delete" onclick="removeProduct('${id}')">Eliminar</button>
+        `;
+        list.appendChild(li);
+      });
     }
 
-    function closeLegalModal() {
-      document.getElementById('legalModal').style.display = 'none';
+    function removeProduct(id) {
+      const card = document.querySelector(`.product-card[data-id="${id}"]`);
+      if (card) {
+        card.remove();
+        actualizarListaEliminarAdmin();
+      }
     }
   </script>
 </body>
