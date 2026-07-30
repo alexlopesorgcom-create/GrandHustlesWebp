@@ -4,24 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grand Hustles</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #0f0f0f;
-            color: #ffffff;
-            text-align: center;
-            padding: 50px;
-        }
-        h1 {
-            color: #ffcc00;
-        }
-        p {
-            font-size: 1.2rem;
-        }
-    </style>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Grand Hustles</h1>
-    <p>¡Tienda y plataforma en línea funcionando al 100%!</p>
+<body class="bg-zinc-950 text-white font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <h1 class="text-xl font-black tracking-wider uppercase text-white">Grand Hustles</h1>
+            <nav class="space-x-6 text-sm font-medium text-zinc-400">
+                <a href="#" class="hover:text-white transition">Inicio</a>
+                <a href="#" class="hover:text-white transition">Catálogo</a>
+                <a href="#" class="hover:text-white transition">Contacto</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex items-center justify-center px-4 py-16">
+        <div class="text-center max-w-2xl mx-auto">
+            <span class="inline-block py-1 px-3 rounded-full bg-zinc-800 text-zinc-300 text-xs font-semibold uppercase tracking-widest mb-4">Official Store</span>
+            <h2 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6">Elevate Your Style</h2>
+            <p class="text-zinc-400 text-lg mb-8">Descubre la nueva colección exclusiva. Diseños únicos con la mejor calidad urbana.</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="#" class="bg-white text-zinc-950 font-bold py-3 px-8 rounded-lg hover:bg-zinc-200 transition">Ver Productos</a>
+                <a href="#" class="border border-zinc-700 text-white font-bold py-3 px-8 rounded-lg hover:bg-zinc-900 transition">Saber Más</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-zinc-900 py-6 text-center text-zinc-600 text-sm">
+        <p>&copy; 2026 Grand Hustles. Todos los derechos reservados.</p>
+    </footer>
+
 </body>
 </html>
