@@ -1,53 +1,82 @@
- const Stripe = require('stripe');
+const Stripe = require("stripe");
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error("Falta STRIPE_SECRET_KEY en las variables de entorno");
+}
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  // CORS
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    "Access-Control-Allow-Methods",
+    "POST, OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type"
   );
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method Not Allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      success: false,
+      error: "Método no permitido"
+    });
   }
-
-  const { paymentMethodId, amount, email, shipping } = req.body;
 
   try {
+    const {
+      paymentMethodId,
+      amount,
+      email,
+      shipping
+    } = req.body;
+
+    if (!paymentMethodId || !amount) {
+      return res.status(400).json({
+        success: false,
+        error: "Faltan datos del pago"
+      });
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
-      currency: 'usd',
+      amount: Math.round(Number(amount) * 100),
+      currency: "usd",
       payment_method: paymentMethodId,
       confirm: true,
-      receipt_email: email,
-      shipping: shipping ? {
-        name: `${shipping.firstName} ${shipping.lastName}`,
-        address: {
-          line1: shipping.address,
-          city: shipping.city,
-          state: shipping.state,
-          postal_code: shipping.zip,
-          country: 'US'
-        }
-      } : undefined,
-      automatic_payment_methods: {
-        enabled: true,
-        allow_redirects: 'never'
-      }
+      receipt_email: email || undefined,
+      shipping: shipping
+        ? {
+            name: `${shipping.firstName} ${shipping.lastName}`,
+            address: {
+              line1: shipping.address,
+              city: shipping.city,
+              state: shipping.state,
+              postal_code: shipping.zip,
+              country: "US"
+            }
+          }
+        : undefined
     });
 
-    return res.status(200).json({ success: true, paymentIntent });
+    return res.status(200).json({
+      success: true,
+      paymentId: paymentIntent.id,
+      status: paymentIntent.status
+    });
+
   } catch (error) {
-    console.error('Error procesando el pago:', error.message);
-    return res.status(400).json({ success: false, error: error.message });
+    console.error("Stripe error:", error.message);
+
+    return res.status(400).json({
+      success: false,
+      error: error.message
+    });
   }
 };
