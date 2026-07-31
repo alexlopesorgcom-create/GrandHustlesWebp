@@ -2,14 +2,8 @@
   "name": "grand-hustles-backend",
   "version": "1.0.0",
   "description": "Backend de cobros para GRAND HUSTLES",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
+  "main": "charge.js",
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
     "stripe": "^15.10.0"
   }
 }
