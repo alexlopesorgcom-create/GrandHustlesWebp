@@ -1,1 +1,9 @@
- 
+{
+  "name": "grand-hustles-backend",
+  "version": "1.0.0",
+  "description": "Backend de cobros para GRAND HUSTLES",
+  "main": "charge.js",
+  "dependencies": {
+    "stripe": "^15.10.0"
+  }
+}
