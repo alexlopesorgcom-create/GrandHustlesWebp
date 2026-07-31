@@ -950,30 +950,34 @@
       detenerCamaraDirecta();
     } 
     
-    // ACCESO ADMIN DESDE TELÉFONO (MANTENER LOGO PRESIONADO)
+ // ACCESO ADMIN IPHONE (MANTENER LOGO PRESIONADO)
 
 let pressTimer;
-
 const brandTitle = document.querySelector('.brand-title');
 
 if (brandTitle) {
 
-  brandTitle.addEventListener('touchstart', function() {
+  brandTitle.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+
     pressTimer = setTimeout(() => {
       solicitarPasswordAdmin();
-    }, 3000);
-  });
+    }, 2000);
+
+  }, { passive: false });
+
 
   brandTitle.addEventListener('touchend', function() {
     clearTimeout(pressTimer);
   });
 
-  brandTitle.addEventListener('touchmove', function() {
+
+  brandTitle.addEventListener('touchcancel', function() {
     clearTimeout(pressTimer);
   });
 
 }
-
+    
     // LÓGICA DE CÁMARA
     let cameraStream = null;
 
