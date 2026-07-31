@@ -944,7 +944,31 @@
     function closeAdmin() {
       document.getElementById('adminModal').style.display = 'none';
       detenerCamaraDirecta();
-    }
+    } 
+    
+    // ACCESO ADMIN DESDE TELÉFONO (MANTENER LOGO PRESIONADO)
+
+let pressTimer;
+
+const brandTitle = document.querySelector('.brand-title');
+
+if (brandTitle) {
+
+  brandTitle.addEventListener('touchstart', function() {
+    pressTimer = setTimeout(() => {
+      solicitarPasswordAdmin();
+    }, 3000);
+  });
+
+  brandTitle.addEventListener('touchend', function() {
+    clearTimeout(pressTimer);
+  });
+
+  brandTitle.addEventListener('touchmove', function() {
+    clearTimeout(pressTimer);
+  });
+
+}
 
     // LÓGICA DE CÁMARA
     let cameraStream = null;
