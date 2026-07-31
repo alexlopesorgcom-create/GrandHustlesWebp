@@ -138,16 +138,24 @@
       margin-bottom: 10px;
     }
 
-    .add-btn {
-      width: 100%;
-      padding: 12px;
-      background: #fff;
-      color: #000;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+ .add-btn {
+  width: 100%;
+  padding: 12px;
+  background: #fff;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-btn.out-stock {
+  background: #e53e3e;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.9;
+}
 
     /* MODAL ACCESO VIP */
     .access-modal {
@@ -743,41 +751,59 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
-    function cargarProductosFirestore() {
-      const grid = document.getElementById('productGrid');
-      
-      db.collection("products").onSnapshot((snapshot) => {
-        grid.innerHTML = "";
-        
-        if (snapshot.empty) {
-          grid.innerHTML = '<p style="color:#666; grid-column: 1/-1; text-align:center;">No hay productos en el catálogo.</p>';
-          actualizarListaEliminarAdmin();
-          return;
-        }
-
-        snapshot.forEach((doc) => {
-          const product = doc.data();
-          const id = doc.id;
-
-          const card = document.createElement('div');
-          card.className = 'product-card';
-          card.setAttribute('data-id', id);
-          card.innerHTML = `
-            <img src="${product.image || 'https://via.placeholder.com/400x400'}" class="product-img" alt="${product.name}">
-            <div class="product-title">${product.name}</div>
-            <div class="product-price">$${Number(product.price).toFixed(2)} USD</div>
-            <select class="size-selector">
-              <option>S</option><option>M</option><option>L</option><option>XL</option>
-            </select>
-            <button class="add-btn" onclick="addToCart('${product.name}', ${product.price})">ADD TO CART</button>
-          `;
-          grid.appendChild(card);
-        });
-
-        actualizarListaEliminarAdmin();
-      });
+ // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
+function cargarProductosFirestore() {
+  const grid = document.getElementById('productGrid');
+  
+  db.collection("products").onSnapshot((snapshot) => {
+    grid.innerHTML = "";
+    
+    if (snapshot.empty) {
+      grid.innerHTML = '<p style="color:#666; grid-column: 1/-1; text-align:center;">No hay productos en el catálogo.</p>';
+      actualizarListaEliminarAdmin();
+      return;
     }
+
+    snapshot.forEach((doc) => {
+      const product = doc.data();
+      const id = doc.id;
+      const stock = product.stock ?? 0;
+
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.setAttribute('data-id', id);
+
+      card.innerHTML = `
+        <img src="${product.image || 'https://via.placeholder.com/400x400'}" class="product-img" alt="${product.name}">
+        
+        <div class="product-title">${product.name}</div>
+        
+        <div class="product-price">$${Number(product.price).toFixed(2)} USD</div>
+
+        <div style="color:#aaa; font-size:0.8rem; margin-bottom:10px;">
+          ${stock > 0 ? "Available: " + stock : "Out of stock"}
+        </div>
+
+        <select class="size-selector">
+          <option>S</option>
+          <option>M</option>
+          <option>L</option>
+          <option>XL</option>
+        </select>
+
+        ${
+          stock > 0
+          ? `<button class="add-btn" onclick="addToCart('${product.name}', ${product.price}, '${id}')">ADD TO CART</button>`
+          : `<button class="add-btn out-stock" disabled>OUT OF STOCK</button>`
+        }
+      `;
+
+      grid.appendChild(card);
+    });
+
+    actualizarListaEliminarAdmin();
+  });
+}
 
     // LÓGICA DE TIENDA Y CARRITO
     let cart = [];
