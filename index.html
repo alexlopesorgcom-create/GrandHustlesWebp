@@ -754,84 +754,83 @@
     });
 
  // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
+ // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
 function cargarProductosFirestore() {
   const grid = document.getElementById('productGrid');
-  
+
   db.collection("products").onSnapshot((snapshot) => {
     grid.innerHTML = "";
-    
+
     if (snapshot.empty) {
-      grid.innerHTML = '<p style="color:#666; grid-column: 1/-1; text-align:center;">No hay productos en el catálogo.</p>';
+      grid.innerHTML = '<p style="color:#666; grid-column:1/-1; text-align:center;">No hay productos en el catálogo.</p>';
       actualizarListaEliminarAdmin();
       return;
     }
 
     snapshot.forEach((doc) => {
-  const product = doc.data();
-  const id = doc.id;
-  const stock = product.stock ?? 0;
+      const product = doc.data();
+      const id = doc.id;
+      const stock = product.stock ?? 0;
 
-  const card = document.createElement('div');
-  card.className = 'product-card';
-  card.setAttribute('data-id', id);
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.setAttribute('data-id', id);
 
-  let stockText = "";
+      let stockText = "";
 
-  if (stock > 5) {
-    stockText = `Available: ${stock}`;
-  } else if (stock > 0) {
-    stockText = `🔥 Only ${stock} left`;
-  } else {
-    stockText = "OUT OF STOCK";
-  }
+      if (stock > 5) {
+        stockText = `Available: ${stock}`;
+      } else if (stock > 0) {
+        stockText = `🔥 Only ${stock} left`;
+      } else {
+        stockText = "OUT OF STOCK";
+      }
 
-  card.innerHTML = `
-    <img src="${product.image || 'https://via.placeholder.com/400x400'}" 
-    class="product-img" 
-    alt="${product.name}">
+      card.innerHTML = `
+        <img src="${product.image || 'https://via.placeholder.com/400x400'}"
+             class="product-img"
+             alt="${product.name}">
 
-    <div class="product-title">
-      ${product.name}
-    </div>
+        <div class="product-title">
+          ${product.name}
+        </div>
 
-    <div class="product-price">
-      $${Number(product.price).toFixed(2)} USD
-    </div>
+        <div class="product-price">
+          $${Number(product.price).toFixed(2)} USD
+        </div>
 
-    <div style="
-      color:${stock > 0 ? '#aaa' : '#ff4444'};
-      font-size:0.85rem;
-      margin-bottom:10px;
-      font-weight:bold;">
-      ${stockText}
-    </div>
+        <div style="
+          color:${stock > 0 ? '#aaa' : '#ff4444'};
+          font-size:0.85rem;
+          margin-bottom:10px;
+          font-weight:bold;">
+          ${stockText}
+        </div>
 
+        <select class="size-selector">
+          <option>S</option>
+          <option>M</option>
+          <option>L</option>
+          <option>XL</option>
+        </select>
 
-    <select class="size-selector">
-      <option>S</option>
-      <option>M</option>
-      <option>L</option>
-      <option>XL</option>
-    </select>
+        ${
+          stock > 0
+            ? `<button class="add-btn" onclick="addToCart('${product.name}', ${product.price}, '${id}')">
+                ADD TO CART
+              </button>`
+            : `<button class="add-btn out-stock" disabled>
+                OUT OF STOCK
+              </button>`
+        }
+      `;
 
+      grid.appendChild(card);
+    });
 
-    ${
-      stock > 0
-      ?
-      `<button class="add-btn" 
-      onclick="addToCart('${product.name}', ${product.price}, '${id}')">
-      ADD TO CART
-      </button>`
-      :
-      `<button class="add-btn out-stock" disabled>
-      OUT OF STOCK
-      </button>`
-    }
-
-  `;
-
-  grid.appendChild(card);
-});
+    actualizarListaEliminarAdmin();
+  });
+}
     // LÓGICA DE TIENDA Y CARRITO
   let cart = [];
 
