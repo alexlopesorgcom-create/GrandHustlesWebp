@@ -848,8 +848,13 @@ function toggleCart() {
   document.getElementById('cartDrawer').classList.toggle('open');
 }
 
-function addToCart(name, price) {
-  cart.push({ name, price });
+function addToCart(name, price, id) {
+  cart.push({ 
+    name, 
+    price, 
+    id 
+  });
+
   updateCartUI();
   toggleCart();
 }
