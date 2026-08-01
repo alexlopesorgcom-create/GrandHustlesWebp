@@ -462,7 +462,7 @@
       <h2>GRAND HUSTLES</h2>
       <p style="color:#aaa; font-size:0.85rem; margin-top:5px;">Enter VIP Access Code</p>
       <input type="password" id="accessInput" placeholder="ENTER CODE">
-      <button class="add-btn" onclick="checkAccess()">ENTER DROP</button>
+      <button class="add-btn" onclick="testVIP()">ENTER DROP</button>
     </div>
   </div>
 
@@ -833,43 +833,27 @@ function cargarProductosFirestore() {
   grid.appendChild(card);
 });
     // LÓGICA DE TIENDA Y CARRITO
-    let cart = [];
+  let cart = [];
 
-       function checkAccess() {
+function checkAccess() {
+  const code = document.getElementById('accessInput').value.trim().toLowerCase();
 
-      const code = document.getElementById('accessInput').value.trim().toLowerCase();
+  if (code === 'alex') {
+    document.getElementById('accessModal').style.display = 'none';
+  } else {
+    alert('Código de acceso incorrecto.');
+  }
+}
 
-      if (code === 'alex') {
+function toggleCart() {
+  document.getElementById('cartDrawer').classList.toggle('open');
+}
 
-        document.getElementById('accessModal').style.display = 'none';
-
-      } else {
-
-        alert('Código de acceso incorrecto.');
-
-      }
-
-    }
-
-
-
-    function toggleCart() {
-
-      document.getElementById('cartDrawer').classList.toggle('open');
-
-    }
-
-
-
-    function addToCart(name, price) {
-
-      cart.push({ name, price });
-
-      updateCartUI();
-
-      toggleCart();
-
-    }
+function addToCart(name, price) {
+  cart.push({ name, price });
+  updateCartUI();
+  toggleCart();
+}
 
     function updateCartUI() {
       document.getElementById('cartCount').innerText = cart.length;
