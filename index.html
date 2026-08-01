@@ -836,23 +836,16 @@ function cargarProductosFirestore() {
     let cart = [];
 
     function checkAccess() {
-      const code = document.getElementById('accessInput').value.trim().toLowerCase();
-      if (code === 'alex') {
-        document.getElementById('accessModal').style.display = 'none';
-      } else {
-        alert('Código de acceso incorrecto.');
-      }
-    }
+  const code = document.getElementById('accessInput').value.trim();
 
-    function toggleCart() {
-      document.getElementById('cartDrawer').classList.toggle('open');
-    }
+  console.log("Código escrito:", code);
 
-    function addToCart(name, price) {
-      cart.push({ name, price });
-      updateCartUI();
-      toggleCart();
-    }
+  if (code.toLowerCase() === 'alex') {
+    document.getElementById('accessModal').style.display = 'none';
+  } else {
+    alert('Código de acceso incorrecto.');
+  }
+}
 
     function updateCartUI() {
       document.getElementById('cartCount').innerText = cart.length;
