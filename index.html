@@ -485,6 +485,8 @@
 
         <label style="font-size:0.8rem; color:#aaa;">Precio ($ USD):</label>
         <input type="number" id="newProdPrice" class="admin-input" placeholder="Ej: 85">
+        <label style="font-size:0.8rem; color:#aaa;">Stock disponible:</label>
+<input type="number" id="newProdStock" class="admin-input" placeholder="Ej: 10" min="0">
 
         <video id="camera-feed" autoplay playsinline muted></video>
         <button class="btn-camera" id="btnStartCamera" onclick="iniciarCamaraDirecta()">📷 TRANSMISIÓN CÁMARA EN VIVO</button>
@@ -765,46 +767,71 @@ function cargarProductosFirestore() {
     }
 
     snapshot.forEach((doc) => {
-      const product = doc.data();
-      const id = doc.id;
-      const stock = product.stock ?? 0;
+  const product = doc.data();
+  const id = doc.id;
+  const stock = product.stock ?? 0;
 
-      const card = document.createElement('div');
-      card.className = 'product-card';
-      card.setAttribute('data-id', id);
+  const card = document.createElement('div');
+  card.className = 'product-card';
+  card.setAttribute('data-id', id);
 
-      card.innerHTML = `
-        <img src="${product.image || 'https://via.placeholder.com/400x400'}" class="product-img" alt="${product.name}">
-        
-        <div class="product-title">${product.name}</div>
-        
-        <div class="product-price">$${Number(product.price).toFixed(2)} USD</div>
+  let stockText = "";
 
-        <div style="color:#aaa; font-size:0.8rem; margin-bottom:10px;">
-          ${stock > 0 ? "Available: " + stock : "Out of stock"}
-        </div>
+  if (stock > 5) {
+    stockText = `Available: ${stock}`;
+  } else if (stock > 0) {
+    stockText = `🔥 Only ${stock} left`;
+  } else {
+    stockText = "OUT OF STOCK";
+  }
 
-        <select class="size-selector">
-          <option>S</option>
-          <option>M</option>
-          <option>L</option>
-          <option>XL</option>
-        </select>
+  card.innerHTML = `
+    <img src="${product.image || 'https://via.placeholder.com/400x400'}" 
+    class="product-img" 
+    alt="${product.name}">
 
-        ${
-          stock > 0
-          ? `<button class="add-btn" onclick="addToCart('${product.name}', ${product.price}, '${id}')">ADD TO CART</button>`
-          : `<button class="add-btn out-stock" disabled>OUT OF STOCK</button>`
-        }
-      `;
+    <div class="product-title">
+      ${product.name}
+    </div>
 
-      grid.appendChild(card);
-    });
+    <div class="product-price">
+      $${Number(product.price).toFixed(2)} USD
+    </div>
 
-    actualizarListaEliminarAdmin();
-  });
-}
+    <div style="
+      color:${stock > 0 ? '#aaa' : '#ff4444'};
+      font-size:0.85rem;
+      margin-bottom:10px;
+      font-weight:bold;">
+      ${stockText}
+    </div>
 
+
+    <select class="size-selector">
+      <option>S</option>
+      <option>M</option>
+      <option>L</option>
+      <option>XL</option>
+    </select>
+
+
+    ${
+      stock > 0
+      ?
+      `<button class="add-btn" 
+      onclick="addToCart('${product.name}', ${product.price}, '${id}')">
+      ADD TO CART
+      </button>`
+      :
+      `<button class="add-btn out-stock" disabled>
+      OUT OF STOCK
+      </button>`
+    }
+
+  `;
+
+  grid.appendChild(card);
+});
     // LÓGICA DE TIENDA Y CARRITO
     let cart = [];
 
@@ -1062,27 +1089,28 @@ if (brandTitle) {
     // GUARDAR EN FIRESTORE
     async function saveNewProduct() {
       const name = document.getElementById('newProdName').value.trim();
-      const price = parseFloat(document.getElementById('newProdPrice').value);
-
-      if (!name || isNaN(price)) {
-        alert("Por favor ingresa un nombre y precio válidos.");
-        return;
-      }
-
+const price = parseFloat(document.getElementById('newProdPrice').value);
+const stock = parseInt(document.getElementById('newProdStock').value);
+    
+     if (!name || isNaN(price) || isNaN(stock)) {
+  alert("Por favor ingresa nombre, precio y stock válidos.");
+  return;
+}
       try {
-        await db.collection("products").add({
-          name: name,
-          price: price,
-          image: selectedImageBase64,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
+       await db.collection("products").add({
+  name: name,
+  price: price,
+  stock: stock,
+  image: selectedImageBase64,
+  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+});
         alert("Producto agregado y guardado en Firebase con éxito.");
         
-        document.getElementById('newProdName').value = '';
-        document.getElementById('newProdPrice').value = '';
-        document.getElementById('imgPreview').style.display = 'none';
-        selectedImageBase64 = "https://via.placeholder.com/400x400";
+       document.getElementById('newProdName').value = '';
+document.getElementById('newProdPrice').value = '';
+document.getElementById('newProdStock').value = '';
+document.getElementById('imgPreview').style.display = 'none';
+selectedImageBase64 = "https://via.placeholder.com/400x400";
       } catch (error) {
         console.error("Error al guardar en Firebase: ", error);
         alert("Hubo un error al guardar el producto.");
