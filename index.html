@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRAND HUSTLES</title>
+
+  <!-- Librería Three.js para el Fondo 3D -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- SDK Oficial de Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- SDKs de Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #050505;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* CANVAS 3D FONDO */
+    #canvas3d {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* HEADER / NAV */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: rgba(5, 5, 5, 0.6);
+      backdrop-filter: blur(10px);
+    }
+
+     .brand-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: pointer;
+}
+
+    .cart-btn {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 8px 18px;
+      font-weight: bold;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    /* CONTENEDOR PRINCIPAL */
+    .container {
+      position: relative;
+      z-index: 10;
+      padding-top: 120px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    /* GRID DE PRODUCTOS */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+
+    .product-card {
+      background: rgba(20, 20, 20, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(5px);
+      transition: transform 0.3s ease;
+      position: relative;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .product-img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .product-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .product-price {
+      color: #aaa;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    .size-selector {
+      width: 100%;
+      padding: 10px;
+      background: #111;
+      color: white;
+      border: 1px solid #333;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+ .add-btn {
+  width: 100%;
+  padding: 12px;
+  background: #fff;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-btn.out-stock {
+  background: #e53e3e;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+    /* MODAL ACCESO VIP */
+    .access-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.95);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .access-box {
+      text-align: center;
+      background: #111;
+      padding: 40px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .access-box input {
+      width: 100%;
+      padding: 12px;
+      margin: 15px 0;
+      background: #222;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    /* PANEL ADMIN OCULTO */
+    .admin-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.92);
+      z-index: 2500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .admin-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .admin-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #222;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .admin-section {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 15px;
+    }
+
+    .floating-admin-btn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 50%;
+      width: 55px;
+      height: 55px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: all 0.3s ease;
+    }
+
+    .floating-admin-btn:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    #camera-feed {
+      width: 100%;
+      max-height: 200px;
+      background: #000;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .drop-zone {
+      border: 2px dashed #444;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      color: #aaa;
+      cursor: pointer;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+      background: #181818;
+    }
+
+    .drop-zone.dragover {
+      background: rgba(255,255,255,0.08);
+      border-color: #fff;
+      color: #fff;
+    }
+
+    .btn-camera {
+      width: 100%;
+      padding: 10px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+
+    .delete-item-list {
+      list-style: none;
+      margin-top: 10px;
+    }
+
+    .delete-item-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a1a1a;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+
+    .btn-delete {
+      background: #e53e3e;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+
+    /* CARRITO LATERAL */
+    .cart-drawer {
+      position: fixed;
+      top: 0; right: -400px;
+      width: 380px; height: 100vh;
+      background: #111;
+      z-index: 1200;
+      transition: right 0.3s ease;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+    }
+
+    .cart-drawer.open {
+      right: 0;
+    }
+
+    /* CHECKOUT MODAL */
+    .checkout-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.85);
+      z-index: 1500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+
+    .checkout-box {
+      background: #f6f6f6;
+      color: #111;
+      border-radius: 12px;
+      padding: 25px;
+      max-width: 480px;
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .form-group-shopify {
+      margin-bottom: 10px;
+    }
+
+    .form-group-shopify input, .form-group-shopify select {
+      width: 100%;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #d9d9d9;
+      color: #111;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .payment-container {
+      border: 1px solid #d9d9d9;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+      margin-top: 10px;
+      margin-bottom: 15px;
+    }
+
+    .payment-option-header {
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e6e6e6;
+      cursor: pointer;
+      background: #fafafa;
+    }
+
+    .payment-option-header:last-child {
+      border-bottom: none;
+    }
+
+    .payment-option-header input[type="radio"] {
+      accent-color: #000;
+    }
+
+    .card-badge {
+      background: #1434CB;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-style: italic;
+    }
+
+    .card-badge.mc { background: #EB001B; }
+    .card-badge.amex { background: #006FCF; }
+
+    .payment-body {
+      padding: 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #e6e6e6;
+    }
+
+    .success-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 3500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .success-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .success-box img {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CANVAS 3D -->
+  <canvas id="canvas3d"></canvas>
+
+  <!-- POPUP ACCESO VIP -->
+  <div class="access-modal" id="accessModal">
+    <div class="access-box">
+      <h2>GRAND HUSTLES</h2>
+      <p style="color:#aaa; font-size:0.85rem; margin-top:5px;">Enter VIP Access Code</p>
+      <input type="password" id="accessInput" placeholder="ENTER CODE">
+     <button class="add-btn" onclick="checkAccess()">ENTER DROP</button>
+    </div>
+  </div>
+
+  <!-- BOTÓN FLOTANTE TUERCA ADMIN -->
+  <button class="floating-admin-btn" id="gearBtn" onclick="solicitarPasswordAdmin()">⚙️</button>
+
+  <!-- PANEL ADMIN OCULTO -->
+  <div class="admin-modal" id="adminModal">
+    <div class="admin-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3>PANEL ADMIN</h3>
+        <button onclick="closeAdmin()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+
+      <!-- SECCIÓN 1: AGREGAR PRODUCTO -->
+      <div class="admin-section">
+        <h4 style="margin-bottom: 10px; color: #fff;">1. Agregar Nuevo Producto</h4>
+        <label style="font-size:0.8rem; color:#aaa;">Nombre del producto:</label>
+        <input type="text" id="newProdName" class="admin-input" placeholder="Ej: HUSTLE BLACK HOODIE">
+
+        <label style="font-size:0.8rem; color:#aaa;">Precio ($ USD):</label>
+        <input type="number" id="newProdPrice" class="admin-input" placeholder="Ej: 85">
+        <label style="font-size:0.8rem; color:#aaa;">Stock disponible:</label>
+<input type="number" id="newProdStock" class="admin-input" placeholder="Ej: 10" min="0">
+
+        <video id="camera-feed" autoplay playsinline muted></video>
+        <button class="btn-camera" id="btnStartCamera" onclick="iniciarCamaraDirecta()">📷 TRANSMISIÓN CÁMARA EN VIVO</button>
+        <button class="btn-camera" id="btnCapture" style="display:none; background:#28a745;" onclick="capturarFotoCamara()">CAPTURAR FOTO</button>
+        
+        <canvas id="photoCanvas" style="display:none;"></canvas>
+
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <p id="dropText">Arrastra una imagen aquí<br><span style="font-size:0.75rem; color:#666;">o haz clic para seleccionar de tu galería</span></p>
+          <img id="imgPreview" style="display:none; width:100%; height:180px; object-fit:cover; border-radius:6px; margin-top:10px;">
+          <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+        </div>
+
+        <button class="add-btn" onclick="saveNewProduct()">AGREGAR PRODUCTO AL CATÁLOGO</button>
+      </div>
+
+      <!-- SECCIÓN 2: ELIMINAR PRODUCTOS -->
+      <div class="admin-section">
+        <h4 style="margin-bottom: 10px; color: #fff;">2. Eliminar Productos del Catálogo</h4>
+        <ul class="delete-item-list" id="adminDeleteList"></ul>
+      </div>
+
+      <!-- SECCIÓN 3: TÉRMINOS Y CONDICIONES INTERNOS -->
+      <div class="admin-section">
+        <h4 style="margin-bottom: 10px; color: #fff;">3. Términos y Condiciones Internos</h4>
+        <div style="background: #181818; padding: 10px; font-size: 0.75rem; color: #aaa; max-height: 100px; overflow-y: scroll; border-radius: 6px;">
+          <p>1. El usuario administrador acepta la responsabilidad total sobre los cambios aplicados en el catálogo.</p>
+          <p>2. Todos los accesos de la cámara son procesados de forma local sin almacenamiento remoto no autorizado.</p>
+          <p>3. Reservados los derechos sobre el contenido de GRAND HUSTLES.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand-title">GRAND HUSTLES</div>
+    <button class="cart-btn" onclick="toggleCart()">CART (<span id="cartCount">0</span>)</button>
+  </header>
+
+  <!-- CATÁLOGO -->
+  <div class="container">
+    <div class="product-grid" id="productGrid">
+      <!-- Los productos se cargarán dinámicamente desde Firebase Firestore -->
+    </div>
+  </div>
+
+  <!-- CARRITO DESLIZABLE -->
+  <div class="cart-drawer" id="cartDrawer">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3>YOUR CART</h3>
+      <button onclick="toggleCart()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+    </div>
+    <div id="cartItems" style="flex:1; overflow-y:auto;">
+      <p style="color:#666;">Your cart is empty.</p>
+    </div>
+    <div style="border-top:1px solid #222; padding-top:15px; margin-top:15px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+        <span>Total:</span>
+        <span id="cartTotal" style="font-weight:bold;">$0.00 USD</span>
+      </div>
+      <button class="add-btn" style="width:100%; padding:15px; font-size:1rem;" onclick="openCheckout()">CHECKOUT</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE CHECKOUT -->
+  <div class="checkout-modal" id="checkoutModal">
+    <div class="checkout-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="font-size:1.2rem; font-weight:800;">Checkout</h3>
+        <button onclick="closeCheckout()" style="background:none; border:none; color:#111; font-size:1.4rem; cursor:pointer;">✕</button>
+      </div>
+
+      <h4 style="font-size:1rem; font-weight:700; margin-bottom:10px;">Contact</h4>
+      <div class="form-group-shopify">
+        <input type="email" id="custEmail" placeholder="Email address for order confirmation">
+      </div>
+
+      <h4 style="font-size:1rem; font-weight:700; margin-top:15px; margin-bottom:10px;">Delivery</h4>
+      <div class="form-group-shopify">
+        <input type="text" placeholder="Country / Region" value="United States" readonly>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" id="custFirstName" placeholder="First name">
+        </div>
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" id="custLastName" placeholder="Last name">
+        </div>
+      </div>
+
+      <div class="form-group-shopify">
+        <input type="text" id="custAddress" placeholder="Address">
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" id="custCity" placeholder="City">
+        </div>
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" id="custState" placeholder="State (California)">
+        </div>
+        <div class="form-group-shopify" style="flex:1;">
+          <input type="text" id="custZip" placeholder="ZIP code">
+        </div>
+      </div>
+
+      <h4 style="font-size:1rem; font-weight:700; margin-top:20px; margin-bottom:2px;">Payment</h4>
+      <p style="font-size:0.75rem; color:#666; margin-bottom:10px;">All transactions are secure and encrypted.</p>
+
+      <div class="payment-container">
+        <div class="payment-option-header" onclick="document.getElementById('pay_card').click()">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" id="pay_card" name="payment_method" value="stripe" checked onclick="togglePaymentFields('stripe')">
+            <span style="font-weight:600; font-size:0.9rem;">Credit card</span>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <span class="card-badge">VISA</span>
+            <span class="card-badge mc">MC</span>
+            <span class="card-badge amex">AMEX</span>
+          </div>
+        </div>
+
+        <div id="stripeFields" class="payment-body">
+          <div id="card-element" style="padding:12px; background:#fff; border:1px solid #d9d9d9; border-radius:6px;"></div>
+          <div id="card-errors" style="color:#e53e3e; font-size:0.8rem; margin-top:6px;" role="alert"></div>
+        </div>
+
+        <div class="payment-option-header" onclick="document.getElementById('pay_zelle').click()">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" id="pay_zelle" name="payment_method" value="zelle" onclick="togglePaymentFields('zelle')">
+            <span style="font-weight:600; font-size:0.9rem;">Zelle Transfer</span>
+          </div>
+          <span style="color:#7414ca; font-weight:bold; font-size:0.85rem;">zelle</span>
+        </div>
+
+        <div id="zelleFields" class="payment-body" style="display:none; font-size:0.85rem; color:#444;">
+          Envía tu pago a: <strong>+1 (714) 381 9023</strong>.
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; padding-top:10px; border-top:1px solid #e6e6e6;">
+        <span style="font-weight:700; font-size:1.1rem;">Total</span>
+        <span style="font-weight:800; font-size:1.2rem;" id="checkoutTotal">$0.00 USD</span>
+      </div>
+
+      <button id="payBtn" onclick="processPayment()" style="background:#000; color:#fff; border:none; border-radius:8px; padding:16px; font-size:1rem; font-weight:700; width:100%; margin-top:15px; cursor:pointer;">Pay now</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE PAGO EXITOSO -->
+  <div id="paymentSuccessModal" class="success-modal">
+    <div class="success-box">
+      <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Pago Exitoso">
+      <h2>¡Pago Exitoso!</h2>
+      <p style="color:#aaa; font-size:0.9rem; margin-top:10px;">Tu transacción ha sido procesada correctamente.</p>
+      <p style="color:#666; font-size:0.75rem; margin-top:15px;">Redirigiendo a la página principal...</p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="position: relative; z-index: 10; padding: 40px 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 80px; text-align: center; color: #888; font-size: 0.85rem;">
+    <p>© 2026 GRAND HUSTLES. All rights reserved.</p>
+    <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+      <a href="#" onclick="openLegalModal('terms')" style="color: #aaa; text-decoration: none;">Terms & Conditions</a>
+      <a href="#" onclick="openLegalModal('privacy')" style="color: #aaa; text-decoration: none;">Privacy Policy</a>
+      <a href="#" onclick="openLegalModal('shipping')" style="color: #aaa; text-decoration: none;">Shipping & Refunds</a>
+    </div>
+  </footer>
+
+  <!-- MODAL LEGAL -->
+  <div id="legalModal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #111; color: #fff; border: 1px solid #333; border-radius: 12px; padding: 30px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 id="legalTitle" style="font-size: 1.2rem; font-weight: bold;">Términos y Condiciones</h3>
+        <button onclick="closeLegalModal()" style="background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer;">✕</button>
+      </div>
+      <div id="legalContent" style="font-size: 0.9rem; color: #ccc; line-height: 1.6;"></div>
+    </div>
+  </div>
+
+  <script>
+    // CONFIGURACIÓN DE FIREBASE (Reemplaza con tus credenciales si es necesario)
+     const firebaseConfig = {
+  apiKey: "AIzaSyBTsPNhGZs7FCZsTww7Hoi6V_NvU7dbeGg",
+  authDomain: "mi-tienda-drop.firebaseapp.com",
+  projectId: "mi-tienda-drop",
+  storageBucket: "mi-tienda-drop.firebasestorage.app",
+  messagingSenderId: "328796188648",
+  appId: "1:328796188648:web:22fe7d61d299c57b533e5d",
+  measurementId: "G-GGBG2JLBCX"
+};
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // CONFIGURACIÓN DE STRIPE
+    const STRIPE_PUBLISHABLE_KEY = 'pk_live_51TybDhLwe6dh6ocORfqtZjlzLrmr6o6p5ek7YyaAUSXTbI4VSpQHrawrGqBCDXlhNXVzgCtQ8bfL1mnFEWQNSHmh0023zd9CtW'; 
+
+    let stripe;
+    let elements;
+    let cardElement;
+
+    if (STRIPE_PUBLISHABLE_KEY) {
+      stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+      elements = stripe.elements();
+      cardElement = elements.create('card', {
+        style: {
+          base: {
+            color: '#111111',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: '15px',
+            '::placeholder': { color: '#888888' }
+          },
+          invalid: { color: '#e53e3e' }
+        }
+      });
+      cardElement.mount('#card-element');
+
+      cardElement.on('change', (event) => {
+        const displayError = document.getElementById('card-errors');
+        displayError.textContent = event.error ? event.error.message : '';
+      });
+    }
+
+    // FONDO 3D (THREE.JS)[cite: 1]
+    const canvas = document.getElementById('canvas3d');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    const particlesGeometry = new THREE.BufferGeometry();
+    const count = 700;
+    const positions = new Float32Array(count * 3);
+
+    for(let i=0; i < count * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 15;
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particlesMaterial = new THREE.PointsMaterial({ size: 0.03, color: 0xffffff, transparent: true, opacity: 0.6 });
+    const particleMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particleMesh);
+
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      particleMesh.rotation.y += 0.001;
+      particleMesh.rotation.x += 0.0005;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+ // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
+ // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
+function cargarProductosFirestore() {
+  const grid = document.getElementById('productGrid');
+
+  db.collection("products").onSnapshot((snapshot) => {
+    grid.innerHTML = "";
+
+    if (snapshot.empty) {
+      grid.innerHTML = '<p style="color:#666; grid-column:1/-1; text-align:center;">No hay productos en el catálogo.</p>';
+      actualizarListaEliminarAdmin();
+      return;
+    }
+
+    snapshot.forEach((doc) => {
+      const product = doc.data();
+      const id = doc.id;
+      const stock = product.stock ?? 0;
+
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.setAttribute('data-id', id);
+
+      let stockText = "";
+
+      if (stock > 5) {
+        stockText = `Available: ${stock}`;
+      } else if (stock > 0) {
+        stockText = `🔥 Only ${stock} left`;
+      } else {
+        stockText = "OUT OF STOCK";
+      }
+
+      card.innerHTML = `
+        <img src="${product.image || 'https://via.placeholder.com/400x400'}"
+             class="product-img"
+             alt="${product.name}">
+
+        <div class="product-title">
+          ${product.name}
+        </div>
+
+        <div class="product-price">
+          $${Number(product.price).toFixed(2)} USD
+        </div>
+
+        <div style="
+          color:${stock > 0 ? '#aaa' : '#ff4444'};
+          font-size:0.85rem;
+          margin-bottom:10px;
+          font-weight:bold;">
+          ${stockText}
+        </div>
+
+        <select class="size-selector">
+          <option>S</option>
+          <option>M</option>
+          <option>L</option>
+          <option>XL</option>
+        </select>
+
+        ${
+          stock > 0
+            ? `<button class="add-btn" onclick="addToCart('${product.name}', ${product.price}, '${id}')">
+                ADD TO CART
+              </button>`
+            : `<button class="add-btn out-stock" disabled>
+                OUT OF STOCK
+              </button>`
+        }
+      `;
+
+      grid.appendChild(card);
+    });
+
+    actualizarListaEliminarAdmin();
+  });
+}
+    // LÓGICA DE TIENDA Y CARRITO
+  let cart = [];
+
+function checkAccess() {
+  const code = document.getElementById('accessInput').value.trim().toLowerCase();
+
+  if (code === 'alex') {
+    document.getElementById('accessModal').style.display = 'none';
+  } else {
+    alert('Código de acceso incorrecto.');
+  }
+}
+
+function toggleCart() {
+  document.getElementById('cartDrawer').classList.toggle('open');
+}
+
+function addToCart(name, price, id) {
+  cart.push({ 
+    name, 
+    price, 
+    id 
+  });
+
+  updateCartUI();
+  toggleCart();
+}
+
+    function updateCartUI() {
+      document.getElementById('cartCount').innerText = cart.length;
+      const cartItems = document.getElementById('cartItems');
+      const cartTotal = document.getElementById('cartTotal');
+      
+      if (cart.length === 0) {
+        cartItems.innerHTML = '<p style="color:#666;">Your cart is empty.</p>';
+        cartTotal.innerText = '$0.00 USD';
+        return;
+      }
+
+      let html = '';
+      let total = 0;
+      cart.forEach((item) => {
+        total += item.price;
+        html += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">
+          <span>${item.name}</span>
+          <span>$${item.price}.00</span>
+        </div>`;
+      });
+
+      cartItems.innerHTML = html;
+      cartTotal.innerText = `$${total}.00 USD`;
+      document.getElementById('checkoutTotal').innerText = `$${total}.00 USD`;
+    }
+
+    function openCheckout() {
+      if (cart.length === 0) {
+        alert('Tu carrito está vacío');
+        return;
+      }
+      toggleCart();
+      document.getElementById('checkoutModal').style.display = 'flex';
+    }
+
+    function closeCheckout() {
+      document.getElementById('checkoutModal').style.display = 'none';
+    }
+
+    function togglePaymentFields(method) {
+      document.getElementById('stripeFields').style.display = (method === 'stripe') ? 'block' : 'none';
+      document.getElementById('zelleFields').style.display = (method === 'zelle') ? 'block' : 'none';
+    }
+
+    function triggerPaymentSuccessUI() {
+      closeCheckout();
+      const successModal = document.getElementById('paymentSuccessModal');
+      successModal.style.display = 'flex';
+
+      setTimeout(() => {
+        successModal.style.display = 'none';
+        cart = [];
+        updateCartUI();
+      }, 3000);
+    }
+
+    async function processPayment() {
+      const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+
+      if (paymentMethod === 'zelle') {
+        triggerPaymentSuccessUI();
+        return;
+      }
+
+      if (!stripe || !cardElement) {
+        alert('Error con la configuración de Stripe.');
+        return;
+      }
+
+      const email = document.getElementById('custEmail').value.trim();
+      const firstName = document.getElementById('custFirstName').value.trim();
+      const lastName = document.getElementById('custLastName').value.trim();
+      const address = document.getElementById('custAddress').value.trim();
+      const city = document.getElementById('custCity').value.trim();
+      const state = document.getElementById('custState').value.trim();
+      const zip = document.getElementById('custZip').value.trim();
+
+      if (!email || !firstName || !lastName || !address || !city || !state || !zip) {
+        alert('Por favor completa todos los campos requeridos.');
+        return;
+      }
+
+      const amount = cart.reduce((sum, item) => sum + item.price, 0);
+      if (amount <= 0) {
+        alert('Tu carrito está vacío.');
+        return;
+      }
+
+      const payBtn = document.getElementById('payBtn');
+      payBtn.innerText = "Processing...";
+      payBtn.disabled = true;
+
+      const { paymentMethod: stripeMethod, error } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (error) {
+        document.getElementById('card-errors').textContent = error.message;
+        payBtn.innerText = "Pay now";
+        payBtn.disabled = false;
+        return;
+      }
+
+      const response = await fetch('/api/charge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          paymentMethodId: stripeMethod.id,
+          amount,
+          email,
+          shipping: {
+            firstName,
+            lastName,
+            address,
+            city,
+            state,
+            zip
+          }
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        document.getElementById('card-errors').textContent = result.error || 'Error procesando el pago.';
+        payBtn.innerText = "Pay now";
+        payBtn.disabled = false;
+        return;
+      }
+
+      if (result.status === 'requires_action' && result.clientSecret) {
+        const { error: actionError, paymentIntent } = await stripe.handleCardAction(result.clientSecret);
+
+        if (actionError) {
+          document.getElementById('card-errors').textContent = actionError.message;
+          payBtn.innerText = "Pay now";
+          payBtn.disabled = false;
+          return;
+        }
+
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+          triggerPaymentSuccessUI();
+        } else {
+          document.getElementById('card-errors').textContent = 'El pago requiere confirmación adicional.';
+          payBtn.innerText = "Pay now";
+          payBtn.disabled = false;
+          return;
+        }
+      } else if (result.status === 'succeeded') {
+        triggerPaymentSuccessUI();
+      } else {
+        document.getElementById('card-errors').textContent = 'No se pudo confirmar el pago.';
+        payBtn.innerText = "Pay now";
+        payBtn.disabled = false;
+        return;
+      }
+
+      payBtn.innerText = "Pay now";
+      payBtn.disabled = false;
+    }
+
+    function openLegalModal(type) {
+      const title = document.getElementById('legalTitle');
+      const content = document.getElementById('legalContent');
+      
+      if(type === 'terms') {
+        title.innerText = "Terms & Conditions";
+        content.innerText = "All sales are final. Items are released in limited quantities during official drops.";
+      } else if(type === 'privacy') {
+        title.innerText = "Privacy Policy";
+        content.innerText = "Your personal and payment data is fully encrypted and processed securely.";
+      } else if(type === 'shipping') {
+        title.innerText = "Shipping & Refunds";
+        content.innerText = "Orders ship within 3-5 business days. Tracking numbers will be sent via email.";
+      }
+      
+      document.getElementById('legalModal').style.display = 'flex';
+    }
+
+    function closeLegalModal() {
+      document.getElementById('legalModal').style.display = 'none';
+    }
+
+    // COMBINACIÓN DE TECLAS Y ADMIN (CTRL + SHIFT + A)
+    const ADMIN_PASSWORD = "Legacy2026";
+    let selectedImageBase64 = "https://via.placeholder.com/400x400";
+
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        const gearBtn = document.getElementById('gearBtn');
+        gearBtn.style.display = 'block';
+        alert("Modo Oculto: La tuerca de administración ha aparecido.");
+      }
+    });
+
+    function solicitarPasswordAdmin() {
+      const pwd = prompt("Ingresa la contraseña del Panel de Administración:");
+      if (pwd === ADMIN_PASSWORD) {
+        actualizarListaEliminarAdmin();
+        document.getElementById('adminModal').style.display = 'flex';
+      } else if (pwd !== null) {
+        alert("Contraseña incorrecta.");
+      }
+    }
+
+    function closeAdmin() {
+      document.getElementById('adminModal').style.display = 'none';
+      detenerCamaraDirecta();
+    } 
+    
+ // ACCESO ADMIN IPHONE (MANTENER LOGO PRESIONADO)
+
+let pressTimer;
+const brandTitle = document.querySelector('.brand-title');
+
+if (brandTitle) {
+
+  brandTitle.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+
+    pressTimer = setTimeout(() => {
+      solicitarPasswordAdmin();
+    }, 2000);
+
+  }, { passive: false });
+
+
+  brandTitle.addEventListener('touchend', function() {
+    clearTimeout(pressTimer);
+  });
+
+
+  brandTitle.addEventListener('touchcancel', function() {
+    clearTimeout(pressTimer);
+  });
+
+}
+    
+    // LÓGICA DE CÁMARA
+    let cameraStream = null;
+
+    async function iniciarCamaraDirecta() {
+      const video = document.getElementById('camera-feed');
+      const btnCapture = document.getElementById('btnCapture');
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = cameraStream;
+        video.style.display = 'block';
+        btnCapture.style.display = 'block';
+      } catch (err) {
+        alert("No se pudo acceder a la cámara.");
+      }
+    }
+
+    function capturarFotoCamara() {
+      const video = document.getElementById('camera-feed');
+      const canvas = document.getElementById('photoCanvas');
+      const imgPreview = document.getElementById('imgPreview');
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      
+      selectedImageBase64 = canvas.toDataURL('image/png');
+      imgPreview.src = selectedImageBase64;
+      imgPreview.style.display = 'block';
+      
+      detenerCamaraDirecta();
+    }
+
+    function detenerCamaraDirecta() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      document.getElementById('camera-feed').style.display = 'none';
+      document.getElementById('btnCapture').style.display = 'none';
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          selectedImageBase64 = evt.target.result;
+          const imgPreview = document.getElementById('imgPreview');
+          imgPreview.src = selectedImageBase64;
+          imgPreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // GUARDAR EN FIRESTORE
+    async function saveNewProduct() {
+      const name = document.getElementById('newProdName').value.trim();
+const price = parseFloat(document.getElementById('newProdPrice').value);
+const stock = parseInt(document.getElementById('newProdStock').value);
+    
+     if (!name || isNaN(price) || isNaN(stock)) {
+  alert("Por favor ingresa nombre, precio y stock válidos.");
+  return;
+}
+      try {
+       await db.collection("products").add({
+  name: name,
+  price: price,
+  stock: stock,
+  image: selectedImageBase64,
+  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+});
+        alert("Producto agregado y guardado en Firebase con éxito.");
+        
+       document.getElementById('newProdName').value = '';
+document.getElementById('newProdPrice').value = '';
+document.getElementById('newProdStock').value = '';
+document.getElementById('imgPreview').style.display = 'none';
+selectedImageBase64 = "https://via.placeholder.com/400x400";
+      } catch (error) {
+        console.error("Error al guardar en Firebase: ", error);
+        alert("Hubo un error al guardar el producto.");
+      }
+    }
+
+    function actualizarListaEliminarAdmin() {
+      const list = document.getElementById('adminDeleteList');
+      list.innerHTML = '';
+      const cards = document.querySelectorAll('.product-card');
+
+      cards.forEach(card => {
+        const id = card.getAttribute('data-id');
+        const title = card.querySelector('.product-title').innerText;
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${title}</span>
+          <button class="btn-delete" onclick="removeProductFromFirestore('${id}')">Eliminar</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    // ELIMINAR DE FIRESTORE
+    async function removeProductFromFirestore(id) {
+      if (confirm("¿Estás seguro de eliminar este producto de la base de datos?")) {
+        try {
+          await db.collection("products").doc(id).delete();
+          alert("Producto eliminado correctamente.");
+        } catch (error) {
+          console.error("Error al eliminar de Firebase: ", error);
+          alert("Hubo un error al eliminar el producto.");
+        }
+      }
+    }
+
+    // Iniciar carga de productos al abrir la página
+    window.onload = function() {
+      cargarProductosFirestore();
+    };
+  </script>
+</body>
+</html>

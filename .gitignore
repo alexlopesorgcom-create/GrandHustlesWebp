@@ -1,0 +1,16 @@
+# Node dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Vercel deployment files
+.vercel/
+
+# Logs
+*.log
+
+# Optional editor files
+.DS_Store
+.vscode/

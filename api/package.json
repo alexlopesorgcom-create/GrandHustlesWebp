@@ -1,0 +1,16 @@
+{
+  "name": "grand-hustles-backend",
+  "version": "1.0.0",
+  "description": "Backend de cobros para GRAND HUSTLES",
+  "main": "charge.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "stripe": "^15.10.0"
+  }
+}
