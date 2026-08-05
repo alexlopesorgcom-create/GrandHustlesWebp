@@ -9,13 +9,15 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 module.exports = async (req, res) => {
   // CORS
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  const allowedOrigins = [
-    process.env.ALLOWED_ORIGIN,
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-  ].filter(Boolean);
+ const allowedOrigins = [
+  process.env.ALLOWED_ORIGIN,
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
+].filter(Boolean);
 
-  if (origin) {
+const origin = req.headers.origin;
+
+if (origin) {
   res.setHeader("Access-Control-Allow-Origin", origin);
 }
   res.setHeader(
