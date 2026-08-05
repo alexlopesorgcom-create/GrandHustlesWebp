@@ -885,6 +885,90 @@ function addToCart(name, price, id) {
       document.getElementById('checkoutTotal').innerText = `$${total}.00 USD`;
     }
 
+    function aggregateCartItems(items) {
+      return items.reduce((acc, item) => {
+        const existing = acc.find((entry) => entry.id === item.id);
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          acc.push({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: 1
+          });
+        }
+        return acc;
+      }, []);
+    }
+
+    async function validateCartStock(aggregatedItems) {
+      for (const item of aggregatedItems) {
+        const productRef = db.collection("products").doc(item.id);
+        const productSnap = await productRef.get();
+        if (!productSnap.exists) {
+          throw new Error(`Producto no encontrado: ${item.name}`);
+        }
+        const stock = productSnap.data().stock ?? 0;
+        if (stock <= 0) {
+          throw new Error(`El producto "${item.name}" está agotado.`);
+        }
+        if (stock < item.quantity) {
+          throw new Error(`Solo quedan ${stock} unidades de "${item.name}".`);
+        }
+      }
+    }
+
+    async function saveOrder({ items, total, email, shipping, status, updateStock, paymentMethod, paymentId, paymentStatus }) {
+      const orderRef = db.collection("orders").doc();
+
+      if (!updateStock) {
+        await orderRef.set({
+          items,
+          total,
+          email,
+          shipping,
+          status,
+          paymentMethod,
+          paymentId: paymentId || null,
+          paymentStatus: paymentStatus || null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return;
+      }
+
+      await db.runTransaction(async (transaction) => {
+        const productRefs = items.map((item) => db.collection("products").doc(item.id));
+        const productSnaps = await Promise.all(productRefs.map((ref) => transaction.get(ref)));
+
+        productSnaps.forEach((snap, index) => {
+          const item = items[index];
+          if (!snap.exists) {
+            throw new Error(`Producto no encontrado: ${item.name}`);
+          }
+          const currentStock = snap.data().stock ?? 0;
+          if (currentStock < item.quantity) {
+            throw new Error(`No hay suficiente stock para "${item.name}".`);
+          }
+          transaction.update(productRefs[index], {
+            stock: currentStock - item.quantity
+          });
+        });
+
+        transaction.set(orderRef, {
+          items,
+          total,
+          email,
+          shipping,
+          status,
+          paymentMethod,
+          paymentId: paymentId || null,
+          paymentStatus: paymentStatus || null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    }
+
     function openCheckout() {
       if (cart.length === 0) {
         alert('Tu carrito está vacío');
@@ -918,11 +1002,6 @@ function addToCart(name, price, id) {
     async function processPayment() {
       const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
 
-      if (paymentMethod === 'zelle') {
-        triggerPaymentSuccessUI();
-        return;
-      }
-
       if (!stripe || !cardElement) {
         alert('Error con la configuración de Stripe.');
         return;
@@ -947,9 +1026,42 @@ function addToCart(name, price, id) {
         return;
       }
 
+      const aggregatedItems = aggregateCartItems(cart);
       const payBtn = document.getElementById('payBtn');
       payBtn.innerText = "Processing...";
       payBtn.disabled = true;
+
+      if (paymentMethod === 'zelle') {
+        try {
+          await validateCartStock(aggregatedItems);
+          await saveOrder({
+            items: aggregatedItems,
+            total: amount,
+            email,
+            shipping: { firstName, lastName, address, city, state, zip },
+            status: "Pending Payment",
+            updateStock: false,
+            paymentMethod: "Zelle",
+            paymentId: null,
+            paymentStatus: null
+          });
+          triggerPaymentSuccessUI();
+        } catch (error) {
+          document.getElementById('card-errors').textContent = error.message;
+          payBtn.innerText = "Pay now";
+          payBtn.disabled = false;
+        }
+        return;
+      }
+
+      try {
+        await validateCartStock(aggregatedItems);
+      } catch (error) {
+        document.getElementById('card-errors').textContent = error.message;
+        payBtn.innerText = "Pay now";
+        payBtn.disabled = false;
+        return;
+      }
 
       const { paymentMethod: stripeMethod, error } = await stripe.createPaymentMethod({
         type: 'card',
@@ -1003,6 +1115,24 @@ function addToCart(name, price, id) {
         }
 
         if (paymentIntent && paymentIntent.status === 'succeeded') {
+          try {
+            await saveOrder({
+              items: aggregatedItems,
+              total: amount,
+              email,
+              shipping: { firstName, lastName, address, city, state, zip },
+              status: "Paid",
+              updateStock: true,
+              paymentMethod: "Stripe",
+              paymentId: paymentIntent.id || result.paymentId,
+              paymentStatus: paymentIntent.status || result.status
+            });
+          } catch (orderError) {
+            document.getElementById('card-errors').textContent = orderError.message;
+            payBtn.innerText = "Pay now";
+            payBtn.disabled = false;
+            return;
+          }
           triggerPaymentSuccessUI();
         } else {
           document.getElementById('card-errors').textContent = 'El pago requiere confirmación adicional.';
@@ -1011,6 +1141,24 @@ function addToCart(name, price, id) {
           return;
         }
       } else if (result.status === 'succeeded') {
+        try {
+          await saveOrder({
+            items: aggregatedItems,
+            total: amount,
+            email,
+            shipping: { firstName, lastName, address, city, state, zip },
+            status: "Paid",
+            updateStock: true,
+            paymentMethod: "Stripe",
+            paymentId: result.paymentId,
+            paymentStatus: result.status
+          });
+        } catch (orderError) {
+          document.getElementById('card-errors').textContent = orderError.message;
+          payBtn.innerText = "Pay now";
+          payBtn.disabled = false;
+          return;
+        }
         triggerPaymentSuccessUI();
       } else {
         document.getElementById('card-errors').textContent = 'No se pudo confirmar el pago.';
