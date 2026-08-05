@@ -64,38 +64,25 @@ if (origin) {
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amountCents,
-      currency: "usd",
-      payment_method: paymentMethodId,
-      confirm: true,
-      receipt_email: email || undefined,
-      shipping: shipping
-        ? {
-            name: `${shipping.firstName} ${shipping.lastName}`,
-            address: {
-              line1: shipping.address,
-              city: shipping.city,
-              state: shipping.state,
-              postal_code: shipping.zip,
-              country: "US"
-            }
-          }
-        : undefined
-    });
-
-    return res.status(200).json({
-      success: true,
-      paymentId: paymentIntent.id,
-      status: paymentIntent.status,
-      clientSecret: paymentIntent.client_secret
-    });
-
-  } catch (error) {
-    console.error("Stripe error:", error.message);
-
-    return res.status(400).json({
-      success: false,
-      error: error.message
-    });
-  }
-};
+  amount: amountCents,
+  currency: "usd",
+  payment_method: paymentMethodId,
+  confirm: true,
+  automatic_payment_methods: {
+    enabled: true,
+    allow_redirects: "never"
+  },
+  receipt_email: email || undefined,
+  shipping: shipping
+    ? {
+        name: `${shipping.firstName} ${shipping.lastName}`,
+        address: {
+          line1: shipping.address,
+          city: shipping.city,
+          state: shipping.state,
+          postal_code: shipping.zip,
+          country: "US"
+        }
+      }
+    : undefined
+});
