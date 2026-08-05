@@ -1,13 +1,24 @@
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
-    return res.status(405).send("Method Not Allowed");
+    return res.status(405).json({
+      error: "Método no permitido"
+    });
   }
 
-  const event = req.body;
+  try {
+    const event = req.body;
 
-  console.log("Stripe webhook recibido:", event.type);
+    console.log("Stripe webhook recibido:", event.type);
 
-  return res.status(200).json({
-    received: true
-  });
+    return res.status(200).json({
+      received: true
+    });
+
+  } catch (error) {
+    console.error("Webhook error:", error.message);
+
+    return res.status(400).json({
+      error: error.message
+    });
+  }
 };
