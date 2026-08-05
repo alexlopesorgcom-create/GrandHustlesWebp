@@ -15,12 +15,7 @@ module.exports = async (req, res) => {
     "http://127.0.0.1:3000"
   ].filter(Boolean);
 
-   const origin = req.headers.origin;
-
-console.log("ORIGIN RECIBIDO:", origin);
-console.log("ORIGINS PERMITIDOS:", allowedOrigins);
-
-if (origin && allowedOrigins.includes(origin)) {
+  if (origin && allowedOrigins.includes(origin)) {
   res.setHeader("Access-Control-Allow-Origin", origin);
 } else {
   return res.status(403).json({
