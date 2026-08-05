@@ -7,23 +7,21 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 module.exports = async (req, res) => {
+
   // CORS
   res.setHeader("Access-Control-Allow-Credentials", "true");
- const allowedOrigins = [
-  process.env.ALLOWED_ORIGIN,
-  "http://localhost:3000",
-  "http://127.0.0.1:3000"
-].filter(Boolean);
 
-const origin = req.headers.origin;
+  const origin = req.headers.origin;
 
-if (origin) {
-  res.setHeader("Access-Control-Allow-Origin", origin);
-}
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
   res.setHeader(
     "Access-Control-Allow-Methods",
     "POST, OPTIONS"
   );
+
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type"
@@ -41,12 +39,14 @@ if (origin) {
   }
 
   try {
+
     const {
       paymentMethodId,
       amount,
       email,
       shipping
     } = req.body;
+
 
     if (!paymentMethodId || !amount || Number(amount) <= 0) {
       return res.status(400).json({
@@ -55,7 +55,10 @@ if (origin) {
       });
     }
 
+
     const amountCents = Math.round(Number(amount) * 100);
+
+
     if (!Number.isFinite(amountCents) || amountCents <= 0) {
       return res.status(400).json({
         success: false,
@@ -63,26 +66,72 @@ if (origin) {
       });
     }
 
+
     const paymentIntent = await stripe.paymentIntents.create({
-  amount: amountCents,
-  currency: "usd",
-  payment_method: paymentMethodId,
-  confirm: true,
-  automatic_payment_methods: {
-    enabled: true,
-    allow_redirects: "never"
-  },
-  receipt_email: email || undefined,
-  shipping: shipping
-    ? {
-        name: `${shipping.firstName} ${shipping.lastName}`,
-        address: {
-          line1: shipping.address,
-          city: shipping.city,
-          state: shipping.state,
-          postal_code: shipping.zip,
-          country: "US"
-        }
-      }
-    : undefined
-});
+
+      amount: amountCents,
+
+      currency: "usd",
+
+      payment_method: paymentMethodId,
+
+      confirm: true,
+
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: "never"
+      },
+
+      receipt_email: email || undefined,
+
+      shipping: shipping
+        ? {
+            name: `${shipping.firstName} ${shipping.lastName}`,
+            address: {
+              line1: shipping.address,
+              city: shipping.city,
+              state: shipping.state,
+              postal_code: shipping.zip,
+              country: "US"
+            }
+          }
+        : undefined
+    });
+
+
+    console.log(
+      "PAYMENT STATUS:",
+      paymentIntent.status
+    );
+
+
+    return res.status(200).json({
+
+      success: true,
+
+      paymentId: paymentIntent.id,
+
+      status: paymentIntent.status,
+
+      clientSecret: paymentIntent.client_secret
+
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "Stripe error:",
+      error.message
+    );
+
+
+    return res.status(400).json({
+
+      success: false,
+
+      error: error.message
+
+    });
+  }
+};
