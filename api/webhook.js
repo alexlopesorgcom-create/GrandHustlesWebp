@@ -57,16 +57,30 @@ module.exports = async (req, res) => {
       break;
 
 
-    case "payment_intent.payment_failed":
+case "payment_intent.succeeded":
 
-      const failedPayment = event.data.object;
+  const paymentIntent = event.data.object;
 
-      console.log(
-        "Pago fallido:",
-        failedPayment.id
-      );
+  console.log(
+    "Payment confirmed:",
+    paymentIntent.id
+  );
 
-      break;
+  await db.collection("orders").doc(paymentIntent.id).set({
+    paymentId: paymentIntent.id,
+    amount: paymentIntent.amount / 100,
+    currency: paymentIntent.currency,
+    status: "Paid",
+    email: paymentIntent.receipt_email || null,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  console.log(
+    "Order saved to Firestore:",
+    paymentIntent.id
+  );
+
+  break;
 
 
     default:
