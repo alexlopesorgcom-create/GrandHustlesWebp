@@ -44,6 +44,7 @@ module.exports = async (req, res) => {
       paymentMethodId,
       amount,
       email,
+      items,
       shipping
     } = req.body;
 
@@ -75,7 +76,8 @@ module.exports = async (req, res) => {
 
       metadata: {
         email: email || "",
-        product: "Grand Hustles Order"
+        product: "Grand Hustles Order",
+        items: JSON.stringify(items || [])
       },
 
       payment_method: paymentMethodId,
