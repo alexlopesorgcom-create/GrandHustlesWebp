@@ -2,14 +2,16 @@ const Stripe = require("stripe");
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
+const { db, admin } = require("./firebaseAdmin");
+
 module.exports = async (req, res) => {
 
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Método no permitido"
+      error: "Method not allowed"
     });
   }
-
+  
   const sig = req.headers["stripe-signature"];
 
   let event;
