@@ -58,7 +58,8 @@ module.exports = async (req, res) => {
 
   switch (event.type) {
 
-    case "payment_intent.succeeded":
+
+    case "payment_intent.succeeded": {
 
       const paymentIntent = event.data.object;
 
@@ -67,10 +68,38 @@ module.exports = async (req, res) => {
         paymentIntent.id
       );
 
+
+      const orderData = {
+
+        paymentId: paymentIntent.id,
+
+        paymentStatus: paymentIntent.status,
+
+        amount: paymentIntent.amount / 100,
+
+        currency: paymentIntent.currency,
+
+        email: paymentIntent.receipt_email || null,
+
+        status: "Paid",
+
+        createdAt: new Date()
+
+      };
+
+
+      console.log(
+        "Orden creada:",
+        orderData
+      );
+
+
       break;
 
+    }
 
-    case "payment_intent.payment_failed":
+
+    case "payment_intent.payment_failed": {
 
       const failedPayment = event.data.object;
 
@@ -79,7 +108,10 @@ module.exports = async (req, res) => {
         failedPayment.id
       );
 
+
       break;
+
+    }
 
 
     default:
