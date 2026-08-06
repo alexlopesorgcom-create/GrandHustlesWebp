@@ -2,6 +2,12 @@ const Stripe = require("stripe");
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 module.exports = async (req, res) => {
 
   if (req.method !== "POST") {
@@ -16,15 +22,26 @@ module.exports = async (req, res) => {
 
   try {
 
+    const chunks = [];
+
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+
+    const rawBody = Buffer.concat(chunks);
+
     event = stripe.webhooks.constructEvent(
-      req.body,
+      rawBody,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET
+      process.env.STRIPE_WEBHOOK_SECRET.trim()
     );
 
   } catch (err) {
 
-    console.error("Webhook signature error:", err.message);
+    console.error(
+      "Webhook signature error:",
+      err.message
+    );
 
     return res.status(400).json({
       error: `Webhook Error: ${err.message}`
@@ -33,7 +50,10 @@ module.exports = async (req, res) => {
   }
 
 
-  console.log("Stripe event:", event.type);
+  console.log(
+    "Stripe event:",
+    event.type
+  );
 
 
   switch (event.type) {
@@ -46,11 +66,6 @@ module.exports = async (req, res) => {
         "Pago confirmado:",
         paymentIntent.id
       );
-
-      // Aquí después agregaremos:
-      // - bajar inventario
-      // - crear orden
-      // - mandar notificaciones
 
       break;
 
