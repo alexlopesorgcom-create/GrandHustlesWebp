@@ -73,6 +73,11 @@ module.exports = async (req, res) => {
 
       currency: "usd",
 
+      metadata: {
+        email: email || "",
+        product: "Grand Hustles Order"
+      },
+
       payment_method: paymentMethodId,
 
       confirm: true,
