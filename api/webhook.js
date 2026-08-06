@@ -4,6 +4,12 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const { db, admin } = require("./firebaseAdmin");
 
+module.exports.config = {
+  api: {
+    bodyParser: false
+  }
+};
+
 module.exports = async (req, res) => {
 
   if (req.method !== "POST") {
@@ -11,22 +17,33 @@ module.exports = async (req, res) => {
       error: "Method not allowed"
     });
   }
-  
+
   const sig = req.headers["stripe-signature"];
 
   let event;
 
   try {
 
+    const chunks = [];
+
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+
+    const rawBody = Buffer.concat(chunks);
+
     event = stripe.webhooks.constructEvent(
-      req.body,
+      rawBody,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET
+      process.env.STRIPE_WEBHOOK_SECRET.trim()
     );
 
   } catch (err) {
 
-    console.error("Webhook signature error:", err.message);
+    console.error(
+      "Webhook signature error:",
+      err.message
+    );
 
     return res.status(400).json({
       error: `Webhook Error: ${err.message}`
@@ -35,7 +52,10 @@ module.exports = async (req, res) => {
   }
 
 
-  console.log("Stripe event:", event.type);
+  console.log(
+    "Stripe event:",
+    event.type
+  );
 
 
   switch (event.type) {
@@ -44,49 +64,53 @@ module.exports = async (req, res) => {
 
       const paymentIntent = event.data.object;
 
+
       console.log(
-        "Pago confirmado:",
+        "Payment confirmed:",
         paymentIntent.id
       );
 
-      // Aquí después agregaremos:
-      // - bajar inventario
-      // - crear orden
-      // - mandar notificaciones
+
+      await db.collection("orders").doc(paymentIntent.id).set({
+
+        paymentId: paymentIntent.id,
+
+        amount: paymentIntent.amount / 100,
+
+        currency: paymentIntent.currency,
+
+        email: paymentIntent.receipt_email || null,
+
+        status: "Paid",
+
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+
+      });
+
+
+      console.log(
+        "Order saved:",
+        paymentIntent.id
+      );
+
 
       break;
 
 
-case "payment_intent.succeeded":
+    case "payment_intent.payment_failed":
 
-  const paymentIntent = event.data.object;
+      console.log(
+        "Payment failed:",
+        event.data.object.id
+      );
 
-  console.log(
-    "Payment confirmed:",
-    paymentIntent.id
-  );
-
-  await db.collection("orders").doc(paymentIntent.id).set({
-    paymentId: paymentIntent.id,
-    amount: paymentIntent.amount / 100,
-    currency: paymentIntent.currency,
-    status: "Paid",
-    email: paymentIntent.receipt_email || null,
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
-  });
-
-  console.log(
-    "Order saved to Firestore:",
-    paymentIntent.id
-  );
-
-  break;
+      break;
 
 
     default:
 
       console.log(
-        "Evento no manejado:",
+        "Unhandled event:",
         event.type
       );
 
