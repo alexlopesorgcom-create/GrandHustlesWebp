@@ -1075,26 +1075,26 @@ function addToCart(name, price, id) {
         return;
       }
 
-      const response = await fetch('/api/charge', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-  paymentMethodId: stripeMethod.id,
-  amount,
-  email,
-  items: aggregatedItems,
-  shipping: {
-    firstName,
-    lastName,
-    address,
-    city,
-    state,
-    zip
-  }
-})
-
+const response = await fetch('/api/charge', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    paymentMethodId: stripeMethod.id,
+    amount,
+    email,
+    items: aggregatedItems,
+    shipping: {
+      firstName,
+      lastName,
+      address,
+      city,
+      state,
+      zip
+    }
+  })
+});
       const result = await response.json();
 
       if (!response.ok || !result.success) {
