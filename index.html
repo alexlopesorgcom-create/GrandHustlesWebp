@@ -1081,19 +1081,19 @@ function addToCart(name, price, id) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          paymentMethodId: stripeMethod.id,
-          amount,
-          email,
-          shipping: {
-            firstName,
-            lastName,
-            address,
-            city,
-            state,
-            zip
-          }
-        })
-      });
+  paymentMethodId: stripeMethod.id,
+  amount,
+  email,
+  items: aggregatedItems,
+  shipping: {
+    firstName,
+    lastName,
+    address,
+    city,
+    state,
+    zip
+  }
+})
 
       const result = await response.json();
 
