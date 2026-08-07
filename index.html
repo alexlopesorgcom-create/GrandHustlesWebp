@@ -936,7 +936,13 @@ function addToCart(name, price, id) {
         });
         return;
       }
+}
 
+function openCheckout() {
+  if (cart.length === 0) {
+    alert('Tu carrito está vacío');
+    return;
+  }
       await db.runTransaction(async (transaction) => {
         const productRefs = items.map((item) => db.collection("products").doc(item.id));
         const productSnaps = await Promise.all(productRefs.map((ref) => transaction.get(ref)));
@@ -1016,7 +1022,7 @@ function addToCart(name, price, id) {
       const zip = document.getElementById('custZip').value.trim();
 
       if (!email || !firstName || !lastName || !address || !city || !state || !zip) {
-        alert('Por favor completa todos los campos requeridos.');
+        alert('Please complete all required fields.');
         return;
       }
 
@@ -1122,7 +1128,7 @@ const response = await fetch('/api/charge', {
               email,
               shipping: { firstName, lastName, address, city, state, zip },
               status: "Paid",
-              updateStock: true,
+            updateStock: false,
               paymentMethod: "Stripe",
               paymentId: paymentIntent.id || result.paymentId,
               paymentStatus: paymentIntent.status || result.status
@@ -1148,7 +1154,7 @@ const response = await fetch('/api/charge', {
             email,
             shipping: { firstName, lastName, address, city, state, zip },
             status: "Paid",
-            updateStock: true,
+            updateStock: false, 
             paymentMethod: "Stripe",
             paymentId: result.paymentId,
             paymentStatus: result.status
