@@ -1029,13 +1029,7 @@ function addToCart(name, price, id) {
         });
         return;
       }
-}
 
-function openCheckout() {
-  if (cart.length === 0) {
-    alert('Tu carrito está vacío');
-    return;
-  }
       await db.runTransaction(async (transaction) => {
         const productRefs = items.map((item) => db.collection("products").doc(item.id));
         const productSnaps = await Promise.all(productRefs.map((ref) => transaction.get(ref)));
@@ -1133,7 +1127,6 @@ function openCheckout() {
 
       if (paymentMethod === 'zelle') {
         try {
-          const checkoutId = getCheckoutId();
           await validateCartStock(aggregatedItems);
           await saveOrder({
             items: aggregatedItems,
@@ -1178,7 +1171,6 @@ function openCheckout() {
         return;
       }
 
-      const checkoutId = getCheckoutId();
       const response = await fetch('/api/charge', {
         method: 'POST',
         headers: {
