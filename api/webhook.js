@@ -62,29 +62,36 @@ module.exports = async (req, res) => {
 
 
     case "payment_intent.succeeded":
-
-
       const paymentIntent = event.data.object;
-
+      const orderId = paymentIntent.metadata?.orderId;
 
       console.log(
         "Payment confirmed:",
-        paymentIntent.id
+        paymentIntent.id,
+        "orderId:",
+        orderId
       );
 
+      let orderDoc = null;
 
-      const ordersSnapshot = await db.collection("orders")
-        .where("paymentId", "==", paymentIntent.id)
-        .limit(1)
-        .get();
+      if (orderId) {
+        const doc = await db.collection("orders").doc(orderId).get();
+        if (doc.exists) {
+          orderDoc = doc;
+        }
+      }
 
+      if (!orderDoc) {
+        const ordersSnapshot = await db.collection("orders")
+          .where("paymentId", "==", paymentIntent.id)
+          .limit(1)
+          .get();
+        if (!ordersSnapshot.empty) {
+          orderDoc = ordersSnapshot.docs[0];
+        }
+      }
 
-
-      if (!ordersSnapshot.empty) {
-
-
-        const orderDoc = ordersSnapshot.docs[0];
-
+      if (orderDoc) {
         const orderData = orderDoc.data();
 
 
@@ -197,13 +204,42 @@ module.exports = async (req, res) => {
 
 
     case "payment_intent.payment_failed":
-
+      const failedIntent = event.data.object;
+      const failedOrderId = failedIntent.metadata?.orderId;
 
       console.log(
         "Payment failed:",
-        event.data.object.id
+        failedIntent.id,
+        "orderId:",
+        failedOrderId
       );
 
+      let failedOrderDoc = null;
+
+      if (failedOrderId) {
+        const doc = await db.collection("orders").doc(failedOrderId).get();
+        if (doc.exists) {
+          failedOrderDoc = doc;
+        }
+      }
+
+      if (!failedOrderDoc) {
+        const failedOrdersSnapshot = await db.collection("orders")
+          .where("paymentId", "==", failedIntent.id)
+          .limit(1)
+          .get();
+        if (!failedOrdersSnapshot.empty) {
+          failedOrderDoc = failedOrdersSnapshot.docs[0];
+        }
+      }
+
+      if (failedOrderDoc) {
+        await failedOrderDoc.ref.update({
+          status: "Payment Failed",
+          paymentStatus: "failed",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      }
 
       break;
 

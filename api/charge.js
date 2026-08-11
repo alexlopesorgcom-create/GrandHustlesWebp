@@ -1,4 +1,5 @@
 const Stripe = require("stripe");
+const { db, admin } = require("./firebaseAdmin");
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Falta STRIPE_SECRET_KEY en las variables de entorno");
@@ -44,10 +45,17 @@ module.exports = async (req, res) => {
       paymentMethodId,
       amount,
       email,
+      checkoutId,
       items,
       shipping
     } = req.body;
 
+    if (!checkoutId) {
+      return res.status(400).json({
+        success: false,
+        error: "Falta checkoutId"
+      });
+    }
 
     if (!paymentMethodId || !amount || Number(amount) <= 0) {
       return res.status(400).json({
@@ -67,28 +75,36 @@ module.exports = async (req, res) => {
       });
     }
 
+    const orderRef = db.collection("orders").doc(checkoutId);
+
+    await orderRef.set({
+      items: items || [],
+      total: amount,
+      email,
+      shipping: shipping || null,
+      paymentMethod: "Stripe",
+      paymentId: null,
+      paymentStatus: null,
+      status: "Pending Payment",
+      stockUpdated: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
 
     const paymentIntent = await stripe.paymentIntents.create({
-
       amount: amountCents,
-
       currency: "usd",
-
       metadata: {
         email: email || "",
+        orderId: checkoutId,
         product: "Grand Hustles Order",
         items: JSON.stringify(items || [])
       },
-
       payment_method: paymentMethodId,
-
       confirm: true,
-
       automatic_payment_methods: {
         enabled: true,
         allow_redirects: "never"
       },
-
       receipt_email: email || undefined,
 
       shipping: shipping
@@ -103,8 +119,16 @@ module.exports = async (req, res) => {
             }
           }
         : undefined
+    }, {
+      idempotencyKey: `grand-hustles-${checkoutId}`
     });
 
+    await orderRef.set({
+      paymentId: paymentIntent.id,
+      paymentStatus: paymentIntent.status,
+      status: paymentIntent.status === "succeeded" ? "Paid" : "Pending Payment",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
 
     console.log(
       "PAYMENT STATUS:",

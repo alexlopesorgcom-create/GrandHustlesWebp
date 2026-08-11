@@ -912,6 +912,20 @@ function cargarProductosFirestore() {
 }
     // LÓGICA DE TIENDA Y CARRITO
   let cart = [];
+  const CHECKOUT_STORAGE_KEY = 'grand-hustles-checkout-id';
+
+  function getCheckoutId() {
+    let checkoutId = sessionStorage.getItem(CHECKOUT_STORAGE_KEY);
+    if (!checkoutId) {
+      checkoutId = crypto.randomUUID();
+      sessionStorage.setItem(CHECKOUT_STORAGE_KEY, checkoutId);
+    }
+    return checkoutId;
+  }
+
+  function clearCheckoutId() {
+    sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
+  }
 
 function checkAccess() {
   const code = document.getElementById('accessInput').value.trim().toLowerCase();
@@ -998,8 +1012,8 @@ function addToCart(name, price, id) {
       }
     }
 
-    async function saveOrder({ items, total, email, shipping, status, updateStock, paymentMethod, paymentId, paymentStatus }) {
-      const orderRef = db.collection("orders").doc();
+    async function saveOrder({ items, total, email, shipping, status, updateStock, paymentMethod, paymentId, paymentStatus, orderId }) {
+      const orderRef = orderId ? db.collection("orders").doc(orderId) : db.collection("orders").doc();
 
       if (!updateStock) {
         await orderRef.set({
@@ -1085,6 +1099,7 @@ function openCheckout() {
     }
 
     async function processPayment() {
+      const checkoutId = getCheckoutId();
       const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
 
       if (!stripe || !cardElement) {
@@ -1118,6 +1133,7 @@ function openCheckout() {
 
       if (paymentMethod === 'zelle') {
         try {
+          const checkoutId = getCheckoutId();
           await validateCartStock(aggregatedItems);
           await saveOrder({
             items: aggregatedItems,
@@ -1128,8 +1144,10 @@ function openCheckout() {
             updateStock: false,
             paymentMethod: "Zelle",
             paymentId: null,
-            paymentStatus: null
+            paymentStatus: null,
+            orderId: checkoutId
           });
+          clearCheckoutId();
           triggerPaymentSuccessUI();
         } catch (error) {
           document.getElementById('card-errors').textContent = error.message;
@@ -1160,26 +1178,28 @@ function openCheckout() {
         return;
       }
 
-const response = await fetch('/api/charge', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    paymentMethodId: stripeMethod.id,
-    amount,
-    email,
-    items: aggregatedItems,
-    shipping: {
-      firstName,
-      lastName,
-      address,
-      city,
-      state,
-      zip
-    }
-  })
-});
+      const checkoutId = getCheckoutId();
+      const response = await fetch('/api/charge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          paymentMethodId: stripeMethod.id,
+          amount,
+          email,
+          checkoutId,
+          items: aggregatedItems,
+          shipping: {
+            firstName,
+            lastName,
+            address,
+            city,
+            state,
+            zip
+          }
+        })
+      });
       const result = await response.json();
 
       if (!response.ok || !result.success) {
@@ -1200,24 +1220,7 @@ const response = await fetch('/api/charge', {
         }
 
         if (paymentIntent && paymentIntent.status === 'succeeded') {
-          try {
-            await saveOrder({
-              items: aggregatedItems,
-              total: amount,
-              email,
-              shipping: { firstName, lastName, address, city, state, zip },
-              status: "Paid",
-            updateStock: false,
-              paymentMethod: "Stripe",
-              paymentId: paymentIntent.id || result.paymentId,
-              paymentStatus: paymentIntent.status || result.status
-            });
-          } catch (orderError) {
-            document.getElementById('card-errors').textContent = orderError.message;
-            payBtn.innerText = "Pay now";
-            payBtn.disabled = false;
-            return;
-          }
+          clearCheckoutId();
           triggerPaymentSuccessUI();
         } else {
           document.getElementById('card-errors').textContent = 'El pago requiere confirmación adicional.';
@@ -1226,24 +1229,7 @@ const response = await fetch('/api/charge', {
           return;
         }
       } else if (result.status === 'succeeded') {
-        try {
-          await saveOrder({
-            items: aggregatedItems,
-            total: amount,
-            email,
-            shipping: { firstName, lastName, address, city, state, zip },
-            status: "Paid",
-            updateStock: false, 
-            paymentMethod: "Stripe",
-            paymentId: result.paymentId,
-            paymentStatus: result.status
-          });
-        } catch (orderError) {
-          document.getElementById('card-errors').textContent = orderError.message;
-          payBtn.innerText = "Pay now";
-          payBtn.disabled = false;
-          return;
-        }
+        clearCheckoutId();
         triggerPaymentSuccessUI();
       } else {
         document.getElementById('card-errors').textContent = 'No se pudo confirmar el pago.';
