@@ -1,7 +1,7 @@
 {
   "name": "grand-hustles-backend",
   "version": "1.0.0",
-  "description": "Backend de cobros para GRAND HUSTLES",
+  "description": "Backend de cobros para DRPHVN",
   "main": "charge.js",
   "private": true,
   "scripts": {
