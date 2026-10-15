@@ -79,7 +79,7 @@ module.exports = async (req, res) => {
         }
       });
       productSnaps.forEach((snap, i) => {
-        tx.update(productRefs[i], { stock: Number(snap.data().stock) - quantities.get(snap.id) });
+        tx.update(productRefs[i], { stock: snap.data().stock - quantities.get(snap.id) });
       });
       tx.update(orderRef, {
         paymentId: intent.id,
