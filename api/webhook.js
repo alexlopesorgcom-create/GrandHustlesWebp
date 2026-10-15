@@ -50,6 +50,7 @@ module.exports = async (req, res) => {
         return;
       }
       if (order.paymentStatus === "succeeded" && event.type === "payment_intent.payment_failed") return;
+      if (event.type === "payment_intent.succeeded" && intent.status !== "succeeded") throw new Error("Inconsistent successful payment event");
 
       if (event.type === "payment_intent.payment_failed") {
         tx.update(orderRef, {
