@@ -875,7 +875,7 @@
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
     
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
     const particlesGeometry = new THREE.BufferGeometry();
     const count = 700;
