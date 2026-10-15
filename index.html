@@ -90,6 +90,34 @@
       .drop-atmosphere::before { animation: none; will-change: auto; }
       .drop-shop-link { transition: none; }
     }
+
+    /* Cinematic vault and storefront microinteractions */
+    .access-modal { perspective:1000px; overflow:hidden; }
+    .access-box { position:relative; border:1px solid #a8213b; box-shadow:0 0 80px #5b0b2544; }
+    .vault-wheel { width:132px;height:132px;margin:0 auto 24px;border:8px double #9e243b;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 0 9px #141414,0 0 0 11px #5d1c2b,0 0 35px #b31c4055;animation:vault-spin 16s linear infinite; }
+    .vault-wheel span { font-size:48px;font-weight:900;color:#ff4560; }
+    .vault-status { font-size:.7rem;letter-spacing:.2em;color:#fa6179;margin:12px 0;min-height:1em; }
+    .access-modal.vault-opening .vault-wheel {animation:vault-unlock 1.3s ease-out forwards;}
+    .access-modal.vault-opening .access-box {animation:vault-door 1.6s .3s ease-in forwards;}
+    .access-modal.vault-denied .access-box {animation:vault-shake .4s ease-in-out;}
+    @keyframes vault-spin {to{transform:rotate(360deg)}}
+    @keyframes vault-unlock {to{transform:rotate(420deg) scale(1.15);filter:drop-shadow(0 0 28px #e31b36)}}
+    @keyframes vault-door {to{transform:rotateY(-75deg) translateX(-45%);opacity:0}}
+    @keyframes vault-shake {25%,75%{transform:translateX(-9px)}50%{transform:translateX(9px)}}
+    .cart-btn.cart-pulse {animation:cart-pop .5s ease-out;}
+    .cart-item-row {animation:cart-row-in .35s ease-out both;}
+    .cart-empty-scene {text-align:center;padding:42px 8px;color:#aaa;animation:cart-row-in .5s ease-out both;}
+    .cart-empty-orbit {width:140px;height:140px;margin:0 auto 28px;border:1px dashed #9e243b;border-radius:50%;display:grid;place-items:center;animation:vault-spin 15s linear infinite;}
+    .cart-empty-orbit::after {content:"✦";color:#e31b36;font-size:78px;filter:drop-shadow(0 0 22px #e31b36);}
+    .cart-empty-scene h4 {color:#fff;font-size:1.2rem;letter-spacing:.08em;margin-bottom:12px;}
+    .cart-empty-scene p {line-height:1.6;font-size:.88rem;}
+    .cart-empty-shop {margin-top:24px;background:#e31b36;color:white;padding:13px 20px;border:0;font-weight:900;cursor:pointer;}
+    .success-box {animation:purchase-reveal .7s ease-out both;border-color:#e31b36;box-shadow:0 0 80px #e31b3644;}
+    .success-box img {animation:cart-pop .8s .2s both;}
+    @keyframes cart-pop {0%{transform:scale(.65)}65%{transform:scale(1.18)}100%{transform:scale(1)}}
+    @keyframes cart-row-in {from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes purchase-reveal {from{opacity:0;transform:scale(.7) rotate(-4deg)}to{opacity:1;transform:scale(1)}}
+    @media(prefers-reduced-motion:reduce){.vault-wheel,.access-modal.vault-opening .vault-wheel,.access-modal.vault-opening .access-box,.access-modal.vault-denied .access-box,.cart-btn.cart-pulse,.cart-item-row,.cart-empty-scene,.cart-empty-orbit,.success-box,.success-box img{animation:none!important;}}
     /* CANVAS 3D FONDO */
     #canvas3d {
       position: fixed;
@@ -606,7 +634,9 @@
   <!-- POPUP ACCESO VIP -->
   <div class="access-modal" id="accessModal">
     <div class="access-box">
+      <div class="vault-wheel" aria-hidden="true"><span>D</span></div>
       <h2>DRPHVN</h2>
+      <p class="vault-status" id="vaultStatus" aria-live="polite">VAULT LOCKED // PRIVATE DROP</p>
       <p style="color:#aaa; font-size:0.85rem; margin-top:5px;">Enter VIP Access Code</p>
       <input type="password" id="accessInput" placeholder="ENTER CODE">
      <button class="add-btn" onclick="checkAccess()">ENTER DROP</button>
@@ -1012,12 +1042,20 @@ function cargarProductosFirestore() {
   }
 
 function checkAccess() {
+  const modal = document.getElementById('accessModal');
+  if (modal.classList.contains('vault-opening')) return;
   const code = document.getElementById('accessInput').value.trim().toLowerCase();
-
+  const status = document.getElementById('vaultStatus');
   if (code === 'alex') {
-    document.getElementById('accessModal').style.display = 'none';
+    status.textContent = 'ACCESS GRANTED // UNSEALING THE DROP';
+    modal.classList.remove('vault-denied');
+    modal.classList.add('vault-opening');
+    setTimeout(() => { modal.style.display = 'none'; }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1900);
   } else {
-    alert('Código de acceso incorrecto.');
+    status.textContent = 'ACCESS DENIED // TRY AGAIN';
+    modal.classList.remove('vault-denied');
+    void modal.offsetWidth;
+    modal.classList.add('vault-denied');
   }
 }
 
