@@ -742,6 +742,18 @@
       height: 100px;
       margin-bottom: 20px;
     }
+    /* Vault access confirmation: cinematic toast above the opening door */
+    .vault-access-toast{position:fixed;z-index:10050;left:50%;top:10%;transform:translate(-50%,-22px) scale(.94);width:min(90vw,390px);padding:22px 24px;text-align:center;background:linear-gradient(145deg,#190c13,#090909 70%);border:1px solid #fa496e;box-shadow:0 0 0 1px #661a32,0 20px 90px #000d,0 0 55px #f2295555;opacity:0;pointer-events:none;transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1);font-family:inherit}
+    .vault-access-toast.is-visible{opacity:1;transform:translate(-50%,0) scale(1)}
+    .vault-access-toast::before{content:'';position:absolute;inset:5px;border:1px solid #ffffff1a;pointer-events:none}
+    .vault-access-symbol{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 13px;border:1px solid #ff426b;border-radius:50%;color:#fff;background:#a51036;box-shadow:0 0 32px #ed174e77;font-size:28px;animation:vault-confirm-pulse 1.2s ease-out both}
+    .vault-access-eyebrow{color:#ff6b8a;font-size:10px;letter-spacing:.34em;font-weight:800}
+    .vault-access-title{color:white;font-size:clamp(21px,5vw,30px);font-weight:900;letter-spacing:.13em;margin:8px 0}
+    .vault-access-caption{color:#b9adb2;font-size:12px;letter-spacing:.11em}
+    .vault-access-line{height:2px;margin-top:18px;background:linear-gradient(90deg,transparent,#f93560,transparent);transform-origin:left;animation:vault-confirm-line 2.7s linear both}
+    @keyframes vault-confirm-pulse{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.13)}100%{transform:scale(1);opacity:1}}
+    @keyframes vault-confirm-line{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+    @media(prefers-reduced-motion:reduce){.vault-access-toast{transition:none}.vault-access-symbol,.vault-access-line{animation:none}}
   </style>
 </head>
 <body>
@@ -763,6 +775,13 @@
     </div>
   </div>
 
+  <div id="vaultAccessToast" class="vault-access-toast" role="status" aria-live="polite" aria-atomic="true" hidden>
+    <div class="vault-access-symbol" aria-hidden="true">✓</div>
+    <div class="vault-access-eyebrow">IDENTITY VERIFIED // DRPHVN</div>
+    <div class="vault-access-title">ACCESS GRANTED</div>
+    <div class="vault-access-caption">WELCOME TO THE PRIVATE DROP</div>
+    <div class="vault-access-line" aria-hidden="true"></div>
+  </div>
   <!-- BOTÓN FLOTANTE TUERCA ADMIN -->
   <button class="floating-admin-btn" id="gearBtn" onclick="solicitarPasswordAdmin()">⚙️</button>
 
@@ -1213,7 +1232,19 @@ function checkAccess() {
     status.textContent = 'ACCESS GRANTED // UNSEALING THE DROP';
     modal.classList.remove('vault-denied');
     modal.classList.add('vault-opening');
-    setTimeout(() => { modal.style.display = 'none'; }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 3200);
+    const toast = document.getElementById('vaultAccessToast');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (toast) {
+      toast.hidden = false;
+      toast.classList.remove('is-visible');
+      void toast.offsetWidth;
+      toast.classList.add('is-visible');
+      setTimeout(() => {
+        toast.classList.remove('is-visible');
+        setTimeout(() => { toast.hidden = true; }, reducedMotion ? 0 : 400);
+      }, reducedMotion ? 1400 : 2800);
+    }
+    setTimeout(() => { modal.style.display = 'none'; }, reducedMotion ? 0 : 3200);
   } else {
     status.textContent = 'ACCESS DENIED // TRY AGAIN';
     modal.classList.remove('vault-denied');
