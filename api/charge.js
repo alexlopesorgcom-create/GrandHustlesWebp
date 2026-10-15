@@ -70,11 +70,14 @@ module.exports = async (req, res) => {
       return res.status(400).json({ success: false, error: "Carrito inválido" });
     }
     const validatedItems = [];
+    const seenProducts = new Set();
     let calculatedCents = 0;
     for (const item of items) {
       if (typeof item.id !== "string" || !item.id || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
         return res.status(400).json({ success: false, error: "Cantidad o producto inválido" });
       }
+      if (seenProducts.has(item.id)) return res.status(400).json({ success: false, error: "Producto duplicado en carrito" });
+      seenProducts.add(item.id);
       const product = await db.collection("products").doc(item.id).get();
       if (!product.exists) return res.status(400).json({ success: false, error: "Producto no encontrado" });
       const data = product.data();
