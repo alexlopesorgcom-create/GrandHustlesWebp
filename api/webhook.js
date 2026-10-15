@@ -66,7 +66,9 @@ module.exports = async (req, res) => {
         if (!item || typeof item !== "object" || typeof item.id !== "string" || !item.id || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
           throw new Error("Invalid order item");
         }
-        quantities.set(item.id, (quantities.get(item.id) || 0) + item.quantity);
+        const totalQuantity = (quantities.get(item.id) || 0) + item.quantity;
+        if (!Number.isSafeInteger(totalQuantity) || totalQuantity > 100) throw new Error("Order quantity limit exceeded");
+        quantities.set(item.id, totalQuantity);
       }
       const productRefs = [...quantities.keys()].sort().map(id => db.collection("products").doc(id));
       const productSnaps = await Promise.all(productRefs.map(ref => tx.get(ref)));
