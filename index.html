@@ -1329,7 +1329,15 @@ function updateCartUI() {
         payBtn.disabled = false;
         return;
       }
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        document.getElementById('card-errors').textContent = 'El servidor respondió de forma inesperada. Revisa el estado de tu pedido antes de intentar pagar otra vez.';
+        payBtn.innerText = "Pay now";
+        payBtn.disabled = false;
+        return;
+      }
 
       if (!response.ok || !result.success) {
         document.getElementById('card-errors').textContent = result.error || 'Error procesando el pago.';
