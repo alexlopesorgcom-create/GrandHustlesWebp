@@ -1267,6 +1267,12 @@ function updateCartUI() {
     function triggerPaymentSuccessUI() {
       closeCheckout();
       const successModal = document.getElementById('paymentSuccessModal');
+      const successBox = successModal.querySelector('.success-box');
+      if (successBox) {
+        successBox.style.animation = 'none';
+        void successBox.offsetWidth;
+        successBox.style.animation = '';
+      }
       successModal.style.display = 'flex';
 
       setTimeout(() => {
