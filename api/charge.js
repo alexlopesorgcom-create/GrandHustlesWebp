@@ -145,12 +145,23 @@ module.exports = async (req, res) => {
       idempotencyKey: `grand-hustles-${checkoutId}`
     });
 
-    await orderRef.set({
-      paymentId: paymentIntent.id,
-      paymentStatus: paymentIntent.status,
-      status: "Pending Payment",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    // A fast Stripe webhook may finish before this request. Never downgrade a paid order.
+    await db.runTransaction(async (tx) => {
+      const snapshot = await tx.get(orderRef);
+      if (!snapshot.exists) throw new Error("Order disappeared before payment confirmation");
+      const order = snapshot.data();
+      if (order.paymentId && order.paymentId !== paymentIntent.id) {
+        throw new Error("Conflicting payment intent for order");
+      }
+      const fields = {
+        paymentId: paymentIntent.id,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+      if (order.stockUpdated !== true) {
+        fields.paymentStatus = paymentIntent.status;
+      }
+      tx.update(orderRef, fields);
+    });
 
     console.log(
       "PAYMENT STATUS:",
