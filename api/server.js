@@ -1,68 +1,15 @@
-// Development-only Express backend for local testing.
-// Production Stripe flow uses api/charge.js on Vercel.
-const express = require("express");
-const Stripe = require("stripe");
-const cors = require("cors");
-
-require("dotenv").config();
-
+// Local test server: use the same validated handlers as Vercel.
+// Refuse live keys and non-emulator Firestore to protect the original store.
+require('dotenv').config();
+if (!process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') || !process.env.FIRESTORE_EMULATOR_HOST) {
+  throw new Error('Local server requires Stripe test key and Firestore emulator');
+}
+const express = require('express');
 const app = express();
-
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-
-const allowedOrigins = [
-  process.env.ALLOWED_ORIGIN,
-  "http://localhost:3000",
-  "http://127.0.0.1:3000"
-].filter(Boolean);
-
-app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : false }));
-app.use(express.json());
-
-app.post("/api/charge", async (req, res) => {
-  try {
-    const {
-      paymentMethodId,
-      amount,
-      email,
-      shipping
-    } = req.body;
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(Number(amount) * 100),
-      currency: "usd",
-      payment_method: paymentMethodId,
-      confirm: true,
-      receipt_email: email || undefined,
-      shipping: shipping
-        ? {
-            name: `${shipping.firstName} ${shipping.lastName}`,
-            address: {
-              line1: shipping.address,
-              city: shipping.city,
-              state: shipping.state,
-              postal_code: shipping.zip,
-              country: "US"
-            }
-          }
-        : undefined
-    });
-
-    res.json({
-      success: true,
-      paymentId: paymentIntent.id,
-      status: paymentIntent.status,
-      clientSecret: paymentIntent.client_secret
-    });
-
-  } catch (error) {
-    console.error(error.message);
-
-    res.status(400).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
+// Raw bytes must reach Stripe before JSON middleware parses the request.
+app.post('/api/webhook', require('./webhook'));
+app.use(express.json({ limit: '1mb' }));
+app.post('/api/charge', require('./charge'));
+app.post('/api/process-email-outbox', require('./process-email-outbox'));
 module.exports = app;
+if (require.main === module) app.listen(3000, '127.0.0.1');

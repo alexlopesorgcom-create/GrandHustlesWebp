@@ -2,6 +2,7 @@ const Stripe = require("stripe");
 const { db, admin } = require("./firebaseAdmin");
 
 module.exports = async (req, res) => {
+  if (process.env.VERCEL_ENV === "preview") return res.status(503).json({ error: "Preview payments disabled" });
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
     console.error("Stripe webhook environment is not configured");
@@ -100,7 +101,7 @@ module.exports = async (req, res) => {
       });
       // Durable email outbox. Sending is handled separately after provider setup.
       // Deterministic IDs prevent duplicate jobs on repeated Stripe webhooks.
-      if (typeof order.email === "string" && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(order.email)) {
+      if (typeof order.email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(order.email)) {
         tx.set(db.collection("emailOutbox").doc("customer_paid_" + orderId), {
           kind: "customer_order_paid", orderId, recipient: order.email,
           state: "pending", createdAt: admin.firestore.FieldValue.serverTimestamp()

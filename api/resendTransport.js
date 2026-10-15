@@ -26,12 +26,18 @@ async function sendWithResend(message, options = {}) {
   const response = await fetcher("https://api.resend.com/emails", {
     method: "POST",
     headers,
+    signal: AbortSignal.timeout(10000),
     body: JSON.stringify({
       from, to: [message.to], subject: message.subject,
-      html: message.html, text: message.text || undefined
+      html: message.html, text: message.text || undefined,
+      reply_to: options.replyTo || undefined
     })
   });
-  if (!response.ok) throw new Error("Resend delivery request failed: " + response.status);
+  if (!response.ok) {
+    const error = new Error("Resend delivery request failed");
+    error.status = response.status;
+    throw error;
+  }
   const result = await response.json();
   if (!result || typeof result.id !== "string") throw new Error("Resend returned no message ID");
   return result.id;

@@ -42,3 +42,6 @@
 
 ## Criterio de salida
 No marcar como listo hasta completar todos los casos bloqueantes, revisar registros de Stripe y Firestore, probar móvil/escritorio y obtener aprobación explícita para desplegar.
+
+## Actualización 2026-10-15
+Se ejecutaron 35 pruebas locales, todas correctas, con proveedores simulados. Véase EMAIL_SETUP.md. El procesador de correos ya está implementado y desactivado; siguen pendientes las pruebas reales de integración. Preview bloquea pagos y correos por seguridad; los pasos anteriores de configuración no bastan para habilitarlo. No se ha integrado la reserva al checkout ni autorizado producción.

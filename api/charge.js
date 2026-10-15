@@ -8,6 +8,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 module.exports = async (req, res) => {
+  if (process.env.VERCEL_ENV === "preview") return res.status(503).json({ error: "Preview payments disabled" });
 
   // Checkout is same-origin. Do not reflect arbitrary Origin headers.
   if (req.method !== "POST") {
