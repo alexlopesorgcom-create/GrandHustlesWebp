@@ -712,7 +712,7 @@
           <div id="card-errors" style="color:#e53e3e; font-size:0.8rem; margin-top:6px;" role="alert"></div>
         </div>
 
-        <div class="payment-option-header" onclick="document.getElementById('pay_zelle').click()">
+        <div class="payment-option-header" style="display:none" aria-hidden="true">
           <div style="display:flex; align-items:center; gap:8px;">
             <input type="radio" id="pay_zelle" name="payment_method" value="zelle" onclick="togglePaymentFields('zelle')">
             <span style="font-weight:600; font-size:0.9rem;">Zelle Transfer</span>
@@ -1190,7 +1190,7 @@ function updateCartUI() {
       payBtn.innerText = "Processing...";
       payBtn.disabled = true;
 
-      if (paymentMethod === 'zelle') {
+      if (paymentMethod === 'zelle') {\n        alert("Zelle no está disponible hasta verificar manualmente el proceso de pagos.");\n        payBtn.innerText = "Pay now";\n        payBtn.disabled = false;\n        return;\n      }\n\n      if (false) {
         try {
           await validateCartStock(aggregatedItems);
           await saveOrder({
@@ -1236,7 +1236,7 @@ function updateCartUI() {
         return;
       }
 
-      const response = await fetch('/api/charge', {
+      let response;\n      try {\n      response = await fetch('/api/charge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1257,7 +1257,7 @@ function updateCartUI() {
           }
         })
       });
-      const result = await response.json();
+      } catch (networkError) {\n        document.getElementById("card-errors").textContent = "No se pudo conectar al servidor. Verifica tu conexión antes de intentar otro pago.";\n        payBtn.innerText = "Pay now";\n        payBtn.disabled = false;\n        return;\n      }\n      const result = await response.json();
 
       if (!response.ok || !result.success) {
         document.getElementById('card-errors').textContent = result.error || 'Error procesando el pago.';
@@ -1322,7 +1322,7 @@ function updateCartUI() {
     }
 
     // COMBINACIÓN DE TECLAS Y ADMIN (CTRL + SHIFT + A)
-    const ADMIN_PASSWORD = "Legacy2026";
+    // This client-side password is NOT secure authorization.\n    // Disable admin editing until Firebase Auth + restrictive Firestore rules are configured.\n    const ADMIN_PASSWORD = null;
     let selectedImageBase64 = "https://via.placeholder.com/400x400";
 
     window.addEventListener('keydown', (e) => {
@@ -1336,7 +1336,7 @@ function updateCartUI() {
 
     function solicitarPasswordAdmin() {
       const pwd = prompt("Ingresa la contraseña del Panel de Administración:");
-      if (pwd === ADMIN_PASSWORD) {
+      if (ADMIN_PASSWORD && pwd === ADMIN_PASSWORD) {
         actualizarListaEliminarAdmin();
         document.getElementById('adminModal').style.display = 'flex';
       } else if (pwd !== null) {
