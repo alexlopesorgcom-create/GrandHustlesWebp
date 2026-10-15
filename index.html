@@ -638,7 +638,7 @@
       <h2>DRPHVN</h2>
       <p class="vault-status" id="vaultStatus" aria-live="polite">VAULT LOCKED // PRIVATE DROP</p>
       <p style="color:#aaa; font-size:0.85rem; margin-top:5px;">Enter VIP Access Code</p>
-      <input type="password" id="accessInput" placeholder="ENTER CODE">
+      <input type="password" id="accessInput" placeholder="ENTER CODE" autocomplete="off" onkeydown="if(event.key === 'Enter') checkAccess()">
      <button class="add-btn" onclick="checkAccess()">ENTER DROP</button>
     </div>
   </div>
