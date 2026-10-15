@@ -924,12 +924,14 @@ function cargarProductosFirestore() {
       return;
     }
 
+    let visibleProducts = 0;
     snapshot.forEach((doc) => {
       const product = doc.data();
       const id = doc.id;
       const stock = product.stock ?? 0;
       window.drphvnProductStock[id] = Number(stock);
 
+      visibleProducts += 1;
       const card = document.createElement('div');
       card.className = 'product-card';
       card.setAttribute('data-id', id);
@@ -988,6 +990,7 @@ function cargarProductosFirestore() {
       grid.appendChild(card);
     });
 
+    if (visibleProducts === 0) grid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center;padding:40px 0;">No hay productos disponibles en este momento.</p>';
     actualizarListaEliminarAdmin();
   });
 }
