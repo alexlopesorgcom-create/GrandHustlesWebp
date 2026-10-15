@@ -936,6 +936,8 @@ function cargarProductosFirestore() {
 
       let stockText = "";
 
+      if (product.active === false || product.published === false) return;
+
       if (stock > 5) {
         stockText = `Available: ${stock}`;
       } else if (stock > 0) {
