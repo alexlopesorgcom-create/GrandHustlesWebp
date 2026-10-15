@@ -11,7 +11,12 @@ module.exports = async (req, res) => {
   let event;
   try {
     const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
+    let totalBytes = 0;
+    for await (const chunk of req) {
+      totalBytes += chunk.length;
+      if (totalBytes > 1024 * 1024) return res.status(413).json({ error: "Webhook payload too large" });
+      chunks.push(chunk);
+    }
     event = Stripe(process.env.STRIPE_SECRET_KEY).webhooks.constructEvent(
       Buffer.concat(chunks),
       req.headers["stripe-signature"],
