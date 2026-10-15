@@ -202,6 +202,27 @@
     @keyframes scanline-float {to{background-position:0 120px}}
     @keyframes ambient-sweep {to{transform:rotate(360deg)}}
     @media(prefers-reduced-motion:reduce){.drop-atmosphere{transform:none;transition:none}.drop-atmosphere::after,.drop-hero::before{animation:none!important}}
+
+    /* DRPHVN experience: every stage transitions with physical depth */
+    .cart-drawer {border-left:1px solid #812137;box-shadow:-25px 0 90px #000c, -2px 0 30px #e31b3619;transition:right .55s cubic-bezier(.16,1,.3,1);}
+    .cart-drawer::before {content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,transparent,#ff4764,transparent);background-size:200% 100%;animation:cart-edge-scan 4s linear infinite;pointer-events:none;}
+    .cart-drawer.open h3 {animation:hero-arrive .55s .1s both;}
+    .cart-drawer.open #cartItems {animation:hero-arrive .6s .16s both;}
+    .checkout-modal[style*="flex"] .checkout-box {animation:checkout-enter .65s cubic-bezier(.16,1,.3,1) both;}
+    .checkout-box {border:2px solid #b41b37;box-shadow:0 0 70px #e31b3629,0 30px 100px #0009;}
+    .checkout-box input:focus,.checkout-box select:focus {border-color:#e31b36;box-shadow:0 0 0 3px #e31b3624;transition:box-shadow .2s,border-color .2s;}
+    .drop-progress {position:fixed;top:0;left:0;height:3px;width:100%;z-index:3001;pointer-events:none;transform:scaleX(0);transform-origin:left;background:linear-gradient(90deg,#7e0920,#ff4c69,#fff);box-shadow:0 0 16px #ff3655;}
+    .drop-marquee {position:relative;z-index:10;overflow:hidden;border-block:1px solid #7d1a30;background:#100509;margin:0 calc(-1 * min(20px, 4vw)) 30px;padding:12px 0;white-space:nowrap;}
+    .drop-marquee-track {display:flex;width:max-content;gap:50px;animation:drop-marquee-move 28s linear infinite;color:#f1c9d0;font-size:.76rem;font-weight:900;letter-spacing:.3em;}
+    .drop-marquee-track span::after {content:" ✦";color:#f43b5b;margin-left:50px;}
+    .drop-marquee:hover .drop-marquee-track {animation-play-state:paused;}
+    footer {overflow:hidden;}
+    footer::before {content:"";position:absolute;inset:0 auto auto -40%;width:35%;height:2px;background:linear-gradient(90deg,transparent,#ff4560,transparent);animation:footer-scan 7s linear infinite;}
+    @keyframes cart-edge-scan {to{background-position:-200% 0}}
+    @keyframes checkout-enter {from{opacity:0;transform:translateY(70px) rotateX(-12deg) scale(.9)}to{opacity:1;transform:translateY(0) rotateX(0) scale(1)}}
+    @keyframes drop-marquee-move {to{transform:translateX(-50%)}}
+    @keyframes footer-scan {to{left:120%}}
+    @media(prefers-reduced-motion:reduce){.cart-drawer,.checkout-box input,.checkout-box select{transition:none!important}.cart-drawer::before,.cart-drawer.open h3,.cart-drawer.open #cartItems,.checkout-modal[style*="flex"] .checkout-box,.drop-marquee-track,footer::before{animation:none!important}}
     /* CANVAS 3D FONDO */
     #canvas3d {
       position: fixed;
@@ -710,6 +731,7 @@
   </style>
 </head>
 <body>
+  <div class="drop-progress" id="dropProgress" aria-hidden="true"></div>
 
   <!-- CANVAS 3D -->
   <canvas id="canvas3d"></canvas>
@@ -798,6 +820,7 @@
       <p class="drop-subtitle">Built different. Worn different. Discover the latest pieces from DRPHVN.</p>
       <a class="drop-shop-link" href="#productGrid">SHOP THE DROP ↗</a>
     </section>
+    <div class="drop-marquee" aria-label="DRPHVN independent streetwear"><div class="drop-marquee-track" aria-hidden="true"><span>NO RULES. JUST DRPHVN.</span><span>INDEPENDENT STREETWEAR</span><span>BUILT DIFFERENT</span><span>NEW DROPS</span><span>NO RULES. JUST DRPHVN.</span><span>INDEPENDENT STREETWEAR</span><span>BUILT DIFFERENT</span><span>NEW DROPS</span></div></div>
     <div class="product-grid" id="productGrid">
       <!-- Los productos se cargarán dinámicamente desde Firebase Firestore -->
     </div>
@@ -1016,6 +1039,8 @@
       const delta = current - previousScrollY;
       previousScrollY = current;
       if (reduceMotion.matches) return;
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      document.getElementById('dropProgress').style.transform = 'scaleX(' + Math.min(1, current / maxScroll) + ')';
       document.documentElement.style.setProperty('--ambient-shift', Math.sin(current * 0.0018) * 14 + 'px');
       // Scrolling upward spins the starfield; downward scroll adds subtle depth.
       scrollSpin = Math.max(-0.12, Math.min(0.12, scrollSpin + (delta < 0 ? Math.abs(delta) * 0.0006 : -Math.abs(delta) * 0.00008)));
