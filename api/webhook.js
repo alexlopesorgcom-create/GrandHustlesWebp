@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
 
       // Read all products before performing any writes, as Firestore transactions require.
       const items = order.items;
-      if (!Array.isArray(items) || !items.length) throw new Error("Missing order items");
+      if (!Array.isArray(items) || !items.length || items.length > 100) throw new Error("Missing or oversized order items");
       const quantities = new Map();
       for (const item of items) {
         if (typeof item.id !== "string" || !Number.isSafeInteger(item.quantity) || item.quantity < 1) {
