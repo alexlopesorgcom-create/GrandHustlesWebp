@@ -9,30 +9,7 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 module.exports = async (req, res) => {
 
-  // CORS
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-
-  const origin = req.headers.origin;
-
-  if (origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "POST, OPTIONS"
-  );
-
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type"
-  );
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
+  // Checkout is same-origin. Do not reflect arbitrary Origin headers.\n  if (req.method !== "POST") {
     return res.status(405).json({
       success: false,
       error: "Método no permitido"
@@ -85,7 +62,7 @@ module.exports = async (req, res) => {
       if (!Number.isSafeInteger(priceCents) || priceCents <= 0 || Number(data.stock) < item.quantity) {
         return res.status(400).json({ success: false, error: "Precio o inventario inválido" });
       }
-      calculatedCents += priceCents * item.quantity;
+      calculatedCents += priceCents * item.quantity;\n      if (!Number.isSafeInteger(calculatedCents) || calculatedCents > 99999999) {\n        return res.status(400).json({ success: false, error: "Total fuera del límite permitido" });\n      }
       validatedItems.push({ id: item.id, name: String(data.name || ""), price: priceCents / 100, quantity: item.quantity });
     }
     const amountCents = calculatedCents;
@@ -101,14 +78,9 @@ module.exports = async (req, res) => {
       });
     }
 
-    const orderRef = db.collection("orders").doc(checkoutId);
+    if (typeof email !== "string" || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) {\n      return res.status(400).json({ success: false, error: "Correo electrónico inválido" });\n    }\n    if (!shipping || !["firstName","lastName","address","city","state","zip"].every(k => typeof shipping[k] === "string" && shipping[k].trim().length > 0 && shipping[k].length <= 200)) {\n      return res.status(400).json({ success: false, error: "Dirección de entrega incompleta" });\n    }\n\n    const orderRef = db.collection("orders").doc(checkoutId);
 
-    const existingOrder = await orderRef.get();
-    if (existingOrder.exists) {
-      return res.status(409).json({ success: false, error: "Este intento de pago ya existe. Comprueba el estado de tu pedido antes de volver a pagar." });
-    }
-
-    await orderRef.create({
+    try {\n      await orderRef.create({
       items: validatedItems,
       total: amountCents / 100,
       email,
@@ -118,8 +90,7 @@ module.exports = async (req, res) => {
       paymentStatus: null,
       status: "Pending Payment",
       stockUpdated: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+      createdAt: admin.firestore.FieldValue.serverTimestamp()\n      });\n    } catch (error) {\n      if (error.code === 6 || error.code === "already-exists") {\n        return res.status(409).json({ success: false, error: "Este pedido ya existe. Revisa su estado antes de pagar otra vez." });\n      }\n      throw error;\n    }
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountCents,
@@ -154,8 +125,7 @@ module.exports = async (req, res) => {
       idempotencyKey: `grand-hustles-${checkoutId}`
     });
 
-    await orderRef.set({
-      paymentId: paymentIntent.id,
+    await orderRef.set({\n      paymentId: paymentIntent.id,
       paymentStatus: paymentIntent.status,
       status: paymentIntent.status === "succeeded" ? "Paid" : "Pending Payment",
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
