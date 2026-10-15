@@ -1,7 +1,12 @@
 {
-  "name": "grand-hustles-web",
+  "name": "drphvn-store",
   "version": "1.0.0",
+  "private": true,
   "dependencies": {
+    "firebase-admin": "^12.7.0",
     "stripe": "^14.0.0"
+  },
+  "scripts": {
+    "check": "node --check api/charge.js && node --check api/webhook.js && node --check api/firebaseAdmin.js"
   }
 }
