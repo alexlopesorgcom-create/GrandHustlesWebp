@@ -118,8 +118,7 @@ module.exports = async (req, res) => {
       metadata: {
         email: email || "",
         orderId: checkoutId,
-        product: "DRPHVN Order",
-        items: JSON.stringify(validatedItems)
+        product: "DRPHVN Order"
       },
       payment_method: paymentMethodId,
       confirm: true,
