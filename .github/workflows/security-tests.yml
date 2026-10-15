@@ -1,0 +1,20 @@
+name: DRPHVN Security Tests
+on:
+  push:
+    branches:
+      - feature/drphvn-safe-rebuild-oct2026
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run checkout and stock reservation tests
+        run: npm test
