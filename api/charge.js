@@ -159,7 +159,7 @@ module.exports = async (req, res) => {
         paymentId: paymentIntent.id,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
-      if (order.stockUpdated !== true) {
+      if (order.stockUpdated !== true && order.paymentStatus !== "succeeded") {
         fields.paymentStatus = paymentIntent.status;
       }
       tx.update(orderRef, fields);
