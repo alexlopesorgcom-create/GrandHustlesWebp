@@ -59,8 +59,8 @@ test('releasing a reservation restores stock exactly once', async () => {
   const orderRef = db.collection('orders').doc('buyer');
   await reserveStock(db, orderRef, [{ id: 'last', quantity: 1 }], 'now');
   assert.equal(data.get('products/last').stock, 1);
-  assert.equal(await releaseStock(db, orderRef, 'later'), true);
-  assert.equal(await releaseStock(db, orderRef, 'later'), false);
+  assert.equal(await releaseStock(db, orderRef, 'later', true), true);
+  assert.equal(await releaseStock(db, orderRef, 'later', true), false);
   assert.equal(data.get('products/last').stock, 2);
 });
 
@@ -69,6 +69,6 @@ test('paid reservations cannot be released', async () => {
   const orderRef = db.collection('orders').doc('buyer');
   await reserveStock(db, orderRef, [{ id: 'last', quantity: 1 }], 'now');
   data.set(orderRef.path, { ...data.get(orderRef.path), paymentStatus: 'succeeded' });
-  await assert.rejects(() => releaseStock(db, orderRef, 'later'));
+  await assert.rejects(() => releaseStock(db, orderRef, 'later', true));
   assert.equal(data.get('products/last').stock, 0);
 });
