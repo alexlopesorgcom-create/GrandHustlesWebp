@@ -22,11 +22,11 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: "Invalid webhook signature" });
   }
 
-  const intent = event.data.object;
-  const orderId = intent.metadata?.orderId;
   if (!["payment_intent.succeeded", "payment_intent.payment_failed"].includes(event.type)) {
     return res.status(200).json({ received: true });
   }
+  const intent = event.data.object;
+  const orderId = intent.metadata?.orderId;
   if (!orderId || !/^[A-Za-z0-9_-]{1,128}$/.test(orderId)) {
     console.error("Stripe event missing valid orderId", event.id);
     return res.status(500).json({ error: "Order reconciliation required" });
