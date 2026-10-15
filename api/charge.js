@@ -89,6 +89,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ success: false, error: "Dirección de entrega incompleta" });
     }
 
+    // The server owns order creation; a reused checkout ID cannot overwrite a prior order.
     const orderRef = db.collection("orders").doc(checkoutId);
 
     try {
