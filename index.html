@@ -230,6 +230,13 @@
     @keyframes cart-flight-pop {from{opacity:0;scale:.6}to{opacity:1;scale:1}}
     @keyframes cart-landing {0%{transform:scale(1)}45%{transform:scale(1.22);box-shadow:0 0 32px #e31b36}100%{transform:scale(1)}}
     @media(prefers-reduced-motion:reduce){.cart-flight,.cart-btn.cart-landing{animation:none!important}}
+
+    /* Responsive interactive light trail and tactile product tilt */
+    .drphvn-pointer-glow {position:fixed;left:0;top:0;width:280px;height:280px;border-radius:50%;pointer-events:none;z-index:9;opacity:0;transform:translate3d(-500px,-500px,0);background:radial-gradient(circle,rgba(227,27,54,.19),rgba(227,27,54,.07) 34%,transparent 70%);mix-blend-mode:screen;transition:opacity .3s;will-change:transform;}
+    .drphvn-pointer-glow.is-active {opacity:1;}
+    .product-card.tilt-active {transition:transform .14s ease-out,box-shadow .2s ease-out;transform:perspective(800px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg)) translateY(-7px);}
+    .product-card.tilt-active .product-img {transform:translateZ(16px) scale(1.04);}
+    @media(hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){.drphvn-pointer-glow{display:none}.product-card.tilt-active{transform:none}}
     /* CANVAS 3D FONDO */
     #canvas3d {
       position: fixed;
@@ -1837,6 +1844,49 @@ selectedImageBase64 = "https://via.placeholder.com/400x400";
         }
       }
     }
+
+    // Desktop-only pointer spotlight and product tilt; disabled for touch and reduced motion.
+    (function setupImmersivePointer() {
+      const canAnimate = window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!canAnimate) return;
+      const glow = document.createElement('div');
+      glow.className = 'drphvn-pointer-glow';
+      glow.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(glow);
+      let scheduled = false, x = -500, y = -500;
+      document.addEventListener('pointermove', event => {
+        x = event.clientX; y = event.clientY;
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => {
+          glow.style.transform = 'translate3d(' + (x - 140) + 'px,' + (y - 140) + 'px,0)';
+          scheduled = false;
+        });
+      }, { passive: true });
+      document.addEventListener('pointerover', () => glow.classList.add('is-active'), { passive: true });
+      document.addEventListener('pointerout', event => {
+        if (!event.relatedTarget) glow.classList.remove('is-active');
+      }, { passive: true });
+      const grid = document.getElementById('productGrid');
+      grid.addEventListener('pointermove', event => {
+        const card = event.target.closest('.product-card');
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        const rx = (event.clientY - rect.top) / rect.height - 0.5;
+        const ry = (event.clientX - rect.left) / rect.width - 0.5;
+        card.style.setProperty('--tilt-x', (-rx * 8).toFixed(2) + 'deg');
+        card.style.setProperty('--tilt-y', (ry * 8).toFixed(2) + 'deg');
+        card.classList.add('tilt-active');
+      }, { passive: true });
+      grid.addEventListener('pointerout', event => {
+        const card = event.target.closest('.product-card');
+        if (!card || (event.relatedTarget && card.contains(event.relatedTarget))) return;
+        card.classList.remove('tilt-active');
+        card.style.removeProperty('--tilt-x');
+        card.style.removeProperty('--tilt-y');
+      }, { passive: true });
+    })();
 
     // Iniciar carga de productos al abrir la página
     window.onload = function() {
