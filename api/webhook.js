@@ -42,7 +42,7 @@ module.exports = async (req, res) => {
       if (order.paymentId && order.paymentId !== intent.id) {
         throw new Error("Payment intent does not match order");
       }
-      if (Math.round(Number(order.total) * 100) !== intent.amount || intent.currency !== "usd") {
+      if (!Number.isSafeInteger(intent.amount) || intent.amount <= 0 || Math.round(Number(order.total) * 100) !== intent.amount || intent.currency !== "usd") {
         throw new Error("Payment amount or currency mismatch");
       }
       if (order.stockUpdated === true) return;
