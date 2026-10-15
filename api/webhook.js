@@ -26,7 +26,8 @@ module.exports = async (req, res) => {
     return res.status(200).json({ received: true });
   }
   const intent = event.data?.object;
-  const orderId = intent?.metadata?.orderId;
+  if (!intent || typeof intent !== "object") return res.status(400).json({ error: "Invalid payment event" });
+  const orderId = intent.metadata?.orderId;
   if (typeof orderId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(orderId)) {
     console.error("Stripe event missing valid orderId", event.id);
     return res.status(500).json({ error: "Order reconciliation required" });
