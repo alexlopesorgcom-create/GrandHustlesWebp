@@ -409,6 +409,7 @@
       font-size: 0.75rem;
     }
 
+    #checkoutCartBtn:disabled { opacity:.45; cursor:not-allowed; }
     .cart-item-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid #333; }
     .cart-item-row strong { overflow-wrap:anywhere; }
     .cart-quantity-controls { display:flex; align-items:center; gap:9px; flex-shrink:0; }
@@ -619,7 +620,7 @@
   <!-- HEADER -->
   <header>
     <div class="brand-title">DRPHVN</div>
-    <button class="cart-btn" onclick="toggleCart()">CART (<span id="cartCount">0</span>)</button>
+    <button class="cart-btn" type="button" aria-label="Abrir carrito de compras" onclick="toggleCart()">CART (<span id="cartCount">0</span>)</button>
   </header>
 
   <!-- CATÁLOGO -->
@@ -630,7 +631,7 @@
   </div>
 
   <!-- CARRITO DESLIZABLE -->
-  <div class="cart-drawer" id="cartDrawer">
+  <div class="cart-drawer" id="cartDrawer" role="dialog" aria-label="Carrito de compras" aria-modal="false">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
       <h3>YOUR CART</h3>
       <button onclick="toggleCart()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
@@ -643,7 +644,7 @@
         <span>Total:</span>
         <span id="cartTotal" style="font-weight:bold;">$0.00 USD</span>
       </div>
-      <button class="add-btn" style="width:100%; padding:15px; font-size:1rem;" onclick="openCheckout()">CHECKOUT</button>
+      <button class="add-btn" id="checkoutCartBtn" style="width:100%; padding:15px; font-size:1rem;" onclick="openCheckout()">CHECKOUT</button>
     </div>
   </div>
 
@@ -994,6 +995,8 @@ function updateCartUI() {
   const cartTotal = document.getElementById('cartTotal');
   const checkoutTotal = document.getElementById('checkoutTotal');
   document.getElementById('cartCount').textContent = cart.length;
+  const checkoutCartBtn = document.getElementById('checkoutCartBtn');
+  if (checkoutCartBtn) checkoutCartBtn.disabled = cart.length === 0;
   const grouped = aggregateCartItems(cart);
   const total = cart.reduce((sum, item) => sum + Number(item.price || 0), 0);
   const money = amount => '$' + amount.toFixed(2) + ' USD';
