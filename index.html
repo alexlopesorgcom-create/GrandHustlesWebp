@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GRAND HUSTLES</title>
+  <title>DRPHVN | Streetwear Drops</title>
+  <meta name="theme-color" content="#080808">
+  <meta name="description" content="DRPHVN — streetwear drops, prendas exclusivas y nuevas colecciones.">
 
   <!-- Librería Three.js para el Fondo 3D -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -29,6 +31,15 @@
       overflow-x: hidden;
     }
 
+    :root { --drphvn-red:#e31b36; }
+    .brand-title { color:#fff; letter-spacing:.22em; text-transform:uppercase; }
+    .brand-title::first-letter { color:var(--drphvn-red); }
+    .cart-btn, .add-btn:not(.out-stock) { border-radius:6px; }
+    .cart-btn:hover, .add-btn:not(.out-stock):hover { background:var(--drphvn-red); color:#fff; }
+    .product-card { border-color:rgba(227,27,54,.20); }
+    .product-card:hover { border-color:var(--drphvn-red); }
+    .product-price { color:#f2f2f2; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid var(--drphvn-red); outline-offset:3px; }
     /* CANVAS 3D FONDO */
     #canvas3d {
       position: fixed;
@@ -543,7 +554,7 @@
   <!-- POPUP ACCESO VIP -->
   <div class="access-modal" id="accessModal">
     <div class="access-box">
-      <h2>GRAND HUSTLES</h2>
+      <h2>DRPHVN</h2>
       <p style="color:#aaa; font-size:0.85rem; margin-top:5px;">Enter VIP Access Code</p>
       <input type="password" id="accessInput" placeholder="ENTER CODE">
      <button class="add-btn" onclick="checkAccess()">ENTER DROP</button>
@@ -599,7 +610,7 @@
         <div style="background: #181818; padding: 10px; font-size: 0.75rem; color: #aaa; max-height: 100px; overflow-y: scroll; border-radius: 6px;">
           <p>1. El usuario administrador acepta la responsabilidad total sobre los cambios aplicados en el catálogo.</p>
           <p>2. Todos los accesos de la cámara son procesados de forma local sin almacenamiento remoto no autorizado.</p>
-          <p>3. Reservados los derechos sobre el contenido de GRAND HUSTLES.</p>
+          <p>3. Reservados los derechos sobre el contenido de DRPHVN.</p>
         </div>
       </div>
     </div>
@@ -607,7 +618,7 @@
 
   <!-- HEADER -->
   <header>
-    <div class="brand-title">GRAND HUSTLES</div>
+    <div class="brand-title">DRPHVN</div>
     <button class="cart-btn" onclick="toggleCart()">CART (<span id="cartCount">0</span>)</button>
   </header>
 
@@ -734,7 +745,7 @@
 
   <!-- FOOTER -->
   <footer style="position: relative; z-index: 10; padding: 40px 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 80px; text-align: center; color: #888; font-size: 0.85rem;">
-    <p>© 2026 GRAND HUSTLES. All rights reserved.</p>
+    <p>© 2026 DRPHVN. All rights reserved.</p>
     <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
       <a href="#" onclick="openLegalModal('terms')" style="color: #aaa; text-decoration: none;">Terms & Conditions</a>
       <a href="#" onclick="openLegalModal('privacy')" style="color: #aaa; text-decoration: none;">Privacy Policy</a>
