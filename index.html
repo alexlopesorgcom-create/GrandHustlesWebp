@@ -1383,10 +1383,16 @@ function updateCartUI() {
       closeCheckout();
       const successModal = document.getElementById('paymentSuccessModal');
       const successBox = successModal.querySelector('.success-box');
+      successModal.style.display = 'none';
       if (successBox) {
-        successBox.style.animation = 'none';
+        // Restart every nested CSS animation for each confirmed purchase.
+        successBox.querySelectorAll('.purchase-seal, .purchase-seal span, .purchase-burst i, h2, p').forEach(node => {
+          node.style.animation = 'none';
+        });
         void successBox.offsetWidth;
-        successBox.style.animation = '';
+        successBox.querySelectorAll('.purchase-seal, .purchase-seal span, .purchase-burst i, h2, p').forEach(node => {
+          node.style.animation = '';
+        });
       }
       successModal.style.display = 'flex';
 
