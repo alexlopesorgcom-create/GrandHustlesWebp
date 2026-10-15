@@ -1115,8 +1115,18 @@ function updateCartUI() {
   checkoutTotal.textContent = money(total);
   cartItems.replaceChildren();
   if (!grouped.length) {
-    const empty = document.createElement('p');
-    empty.textContent = 'Your cart is empty.';
+    const empty = document.createElement('div');
+    empty.className = 'cart-empty-scene';
+    empty.innerHTML = '<div class="cart-empty-orbit" aria-hidden="true"></div><h4>YOUR NEXT DROP AWAITS</h4><p>Nothing in your vault yet. Find a piece worth keeping.</p>';
+    const shop = document.createElement('button');
+    shop.type = 'button';
+    shop.className = 'cart-empty-shop';
+    shop.textContent = 'EXPLORE THE DROP ↗';
+    shop.addEventListener('click', () => {
+      document.getElementById('cartDrawer').classList.remove('open');
+      document.getElementById('productGrid').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    });
+    empty.appendChild(shop);
     cartItems.appendChild(empty);
     return;
   }
