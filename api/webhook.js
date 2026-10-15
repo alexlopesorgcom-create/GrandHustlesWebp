@@ -40,6 +40,7 @@ module.exports = async (req, res) => {
       const orderSnap = await tx.get(orderRef);
       if (!orderSnap.exists) throw new Error("Order not found");
       const order = orderSnap.data();
+      if (typeof intent.id !== "string" || !intent.id.startsWith("pi_")) throw new Error("Invalid Stripe payment intent");
       if (order.paymentId && order.paymentId !== intent.id) {
         throw new Error("Payment intent does not match order");
       }
