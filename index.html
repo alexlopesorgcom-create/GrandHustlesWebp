@@ -1190,7 +1190,14 @@ function updateCartUI() {
       payBtn.innerText = "Processing...";
       payBtn.disabled = true;
 
-      if (paymentMethod === 'zelle') {\n        alert("Zelle no está disponible hasta verificar manualmente el proceso de pagos.");\n        payBtn.innerText = "Pay now";\n        payBtn.disabled = false;\n        return;\n      }\n\n      if (false) {
+      if (paymentMethod === 'zelle') {
+        alert("Zelle no está disponible hasta verificar manualmente el proceso de pagos.");
+        payBtn.innerText = "Pay now";
+        payBtn.disabled = false;
+        return;
+      }
+
+      if (false) {
         try {
           await validateCartStock(aggregatedItems);
           await saveOrder({
@@ -1236,7 +1243,9 @@ function updateCartUI() {
         return;
       }
 
-      let response;\n      try {\n      response = await fetch('/api/charge', {
+      let response;
+      try {
+      response = await fetch('/api/charge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1257,7 +1266,13 @@ function updateCartUI() {
           }
         })
       });
-      } catch (networkError) {\n        document.getElementById("card-errors").textContent = "No se pudo conectar al servidor. Verifica tu conexión antes de intentar otro pago.";\n        payBtn.innerText = "Pay now";\n        payBtn.disabled = false;\n        return;\n      }\n      const result = await response.json();
+      } catch (networkError) {
+        document.getElementById("card-errors").textContent = "No se pudo conectar al servidor. Verifica tu conexión antes de intentar otro pago.";
+        payBtn.innerText = "Pay now";
+        payBtn.disabled = false;
+        return;
+      }
+      const result = await response.json();
 
       if (!response.ok || !result.success) {
         document.getElementById('card-errors').textContent = result.error || 'Error procesando el pago.';
@@ -1322,7 +1337,9 @@ function updateCartUI() {
     }
 
     // COMBINACIÓN DE TECLAS Y ADMIN (CTRL + SHIFT + A)
-    // This client-side password is NOT secure authorization.\n    // Disable admin editing until Firebase Auth + restrictive Firestore rules are configured.\n    const ADMIN_PASSWORD = null;
+    // This client-side password is NOT secure authorization.
+    // Disable admin editing until Firebase Auth + restrictive Firestore rules are configured.
+    const ADMIN_PASSWORD = null;
     let selectedImageBase64 = "https://via.placeholder.com/400x400";
 
     window.addEventListener('keydown', (e) => {
