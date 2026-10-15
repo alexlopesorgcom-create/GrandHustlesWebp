@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    if (typeof paymentMethodId !== "string" || !/^pm_[A-Za-z0-9]+$/.test(paymentMethodId) || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+    if (typeof paymentMethodId !== "string" || !/^pm_[A-Za-z0-9]+$/.test(paymentMethodId) || typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({
         success: false,
         error: "Faltan datos del pago o el monto no es válido"
