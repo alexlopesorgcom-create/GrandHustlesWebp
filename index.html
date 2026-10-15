@@ -941,6 +941,12 @@
 
  // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
  // CARGAR PRODUCTOS DESDE FIRESTORE EN TIEMPO REAL
+function escapeCatalogHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[char]);
+}
+
 function cargarProductosFirestore() {
   const grid = document.getElementById('productGrid');
 
@@ -979,12 +985,12 @@ function cargarProductosFirestore() {
       }
 
       card.innerHTML = `
-        <img src="${product.image || 'https://via.placeholder.com/400x400'}"
+        <img src="${escapeCatalogHTML(typeof product.image === 'string' && /^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/i.test(product.image) ? product.image : '')}"
              class="product-img"
-             alt="${product.name}">
+             alt="${escapeCatalogHTML(product.name)}">
 
         <div class="product-title">
-          ${product.name}
+          ${escapeCatalogHTML(product.name)}
         </div>
 
         <div class="product-price">
@@ -1008,7 +1014,7 @@ function cargarProductosFirestore() {
 
         ${
           stock > 0
-            ? `<button class="add-btn" onclick="addToCart('${product.name}', ${product.price}, '${id}')">
+            ? `<button class="add-btn" type="button" data-cart-add>
                 ADD TO CART
               </button>`
             : `<button class="add-btn out-stock" disabled>
@@ -1017,6 +1023,8 @@ function cargarProductosFirestore() {
         }
       `;
 
+      const addButton = card.querySelector('[data-cart-add]');
+      if (addButton) addButton.addEventListener('click', () => addToCart(String(product.name || ''), product.price, id));
       grid.appendChild(card);
     });
 
