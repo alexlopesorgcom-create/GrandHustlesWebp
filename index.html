@@ -985,6 +985,17 @@ function escapeCatalogHTML(value) {
   })[char]);
 }
 
+const drphvnRevealObserver = 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ? new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.remove('reveal-pending');
+        entry.target.classList.add('reveal-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px 40px 0px' })
+  : null;
+
 function cargarProductosFirestore() {
   const grid = document.getElementById('productGrid');
 
@@ -1063,7 +1074,9 @@ function cargarProductosFirestore() {
 
       const addButton = card.querySelector('[data-cart-add]');
       if (addButton) addButton.addEventListener('click', () => addToCart(String(product.name || ''), product.price, id));
+      if (drphvnRevealObserver) card.classList.add('reveal-pending');
       grid.appendChild(card);
+      if (drphvnRevealObserver) drphvnRevealObserver.observe(card);
     });
 
     if (visibleProducts === 0) grid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center;padding:40px 0;">No hay productos disponibles en este momento.</p>';
