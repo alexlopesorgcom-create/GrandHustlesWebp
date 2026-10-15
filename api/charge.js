@@ -65,7 +65,30 @@ module.exports = async (req, res) => {
     }
 
 
-    const amountCents = Math.round(Number(amount) * 100);
+    // Never trust browser-submitted prices. Read canonical product prices from Firestore.
+    if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
+      return res.status(400).json({ success: false, error: "Carrito inválido" });
+    }
+    const validatedItems = [];
+    let calculatedCents = 0;
+    for (const item of items) {
+      if (typeof item.id !== "string" || !item.id || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
+        return res.status(400).json({ success: false, error: "Cantidad o producto inválido" });
+      }
+      const product = await db.collection("products").doc(item.id).get();
+      if (!product.exists) return res.status(400).json({ success: false, error: "Producto no encontrado" });
+      const data = product.data();
+      const priceCents = Math.round(Number(data.price) * 100);
+      if (!Number.isSafeInteger(priceCents) || priceCents <= 0 || Number(data.stock) < item.quantity) {
+        return res.status(400).json({ success: false, error: "Precio o inventario inválido" });
+      }
+      calculatedCents += priceCents * item.quantity;
+      validatedItems.push({ id: item.id, name: String(data.name || ""), price: priceCents / 100, quantity: item.quantity });
+    }
+    const amountCents = calculatedCents;
+    if (Math.round(Number(amount) * 100) !== amountCents) {
+      return res.status(400).json({ success: false, error: "El total del carrito cambió; actualiza tu carrito" });
+    }
 
 
     if (!Number.isFinite(amountCents) || amountCents <= 0) {
@@ -78,8 +101,8 @@ module.exports = async (req, res) => {
     const orderRef = db.collection("orders").doc(checkoutId);
 
     await orderRef.set({
-      items: items || [],
-      total: amount,
+      items: validatedItems,
+      total: amountCents / 100,
       email,
       shipping: shipping || null,
       paymentMethod: "Stripe",
@@ -97,7 +120,7 @@ module.exports = async (req, res) => {
         email: email || "",
         orderId: checkoutId,
         product: "Grand Hustles Order",
-        items: JSON.stringify(items || [])
+        items: JSON.stringify(validatedItems)
       },
       payment_method: paymentMethodId,
       confirm: true,
