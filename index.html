@@ -40,6 +40,56 @@
     .product-card:hover { border-color:var(--drphvn-red); }
     .product-price { color:#f2f2f2; }
     button:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid var(--drphvn-red); outline-offset:3px; }
+    /* DRPHVN cinematic motion backdrop: no video download or extra dependency. */
+    .drop-atmosphere {
+      position: fixed; inset: 0; z-index: 2; pointer-events: none;
+      overflow: hidden; isolation: isolate;
+      background: radial-gradient(ellipse at 50% 105%, rgba(100, 8, 23, .24), transparent 62%);
+    }
+    .drop-atmosphere::before {
+      content: ""; position: absolute; inset: -35%;
+      background:
+        radial-gradient(ellipse at 20% 38%, rgba(227, 27, 54, .23), transparent 34%),
+        radial-gradient(ellipse at 83% 58%, rgba(135, 9, 35, .18), transparent 31%),
+        linear-gradient(115deg, transparent 36%, rgba(255,255,255,.035) 49%, transparent 61%);
+      filter: blur(48px); animation: drop-drift 19s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+    .drop-atmosphere::after {
+      content: ""; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 1px, transparent 1px 5px);
+      opacity: .18; mix-blend-mode: screen;
+    }
+    @keyframes drop-drift {
+      0% { transform: translate3d(-6%, -2%, 0) rotate(-8deg) scale(1); }
+      100% { transform: translate3d(7%, 5%, 0) rotate(8deg) scale(1.13); }
+    }
+    .drop-hero {
+      position: relative; min-height: 320px; display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: center; overflow: hidden;
+      padding: clamp(32px, 7vw, 84px); border: 1px solid rgba(227,27,54,.34);
+      border-radius: 12px; background: linear-gradient(120deg, rgba(12,12,12,.91), rgba(28,5,10,.76));
+      box-shadow: 0 24px 90px rgba(0,0,0,.42); margin-bottom: 34px;
+    }
+    .drop-hero::after {
+      content: "D"; position: absolute; right: -2%; top: -24%;
+      font-size: clamp(270px, 45vw, 610px); font-weight: 950; line-height: 1;
+      color: rgba(227,27,54,.09); transform: rotate(-12deg); pointer-events: none;
+    }
+    .drop-hero > * { position: relative; z-index: 1; }
+    .drop-kicker { font-size: .75rem; letter-spacing: .32em; font-weight: 800; color: #ff546c; }
+    .drop-headline { font-size: clamp(3rem, 10vw, 7.8rem); font-weight: 950; letter-spacing: -.075em; line-height: .94; margin: 15px 0; }
+    .drop-headline span { color: #f13b52; }
+    .drop-subtitle { max-width: 470px; color: #c6c6c6; font-size: clamp(.9rem, 1.7vw, 1.1rem); line-height: 1.6; }
+    .drop-shop-link { display: inline-block; margin-top: 26px; padding: 13px 24px; border: 1px solid #f13b52;
+      background: #e31b36; color: white; text-decoration: none; font-weight: 900; letter-spacing: .11em;
+      transition: background .2s, transform .2s; }
+    .drop-shop-link:hover { background: #a70e27; transform: translateY(-2px); }
+    @media (max-width: 600px) { .drop-hero { min-height: 290px; padding: 30px 22px; } }
+    @media (prefers-reduced-motion: reduce) {
+      .drop-atmosphere::before { animation: none; will-change: auto; }
+      .drop-shop-link { transition: none; }
+    }
     /* CANVAS 3D FONDO */
     #canvas3d {
       position: fixed;
@@ -551,6 +601,7 @@
 
   <!-- CANVAS 3D -->
   <canvas id="canvas3d"></canvas>
+  <div class="drop-atmosphere" aria-hidden="true"></div>
 
   <!-- POPUP ACCESO VIP -->
   <div class="access-modal" id="accessModal">
@@ -625,6 +676,12 @@
 
   <!-- CATÁLOGO -->
   <div class="container">
+    <section class="drop-hero" aria-label="DRPHVN new drops">
+      <p class="drop-kicker">INDEPENDENT STREETWEAR / NEW ERA</p>
+      <h1 class="drop-headline">NO RULES.<br><span>JUST DRPHVN.</span></h1>
+      <p class="drop-subtitle">Built different. Worn different. Discover the latest pieces from DRPHVN.</p>
+      <a class="drop-shop-link" href="#productGrid">SHOP THE DROP ↗</a>
+    </section>
     <div class="product-grid" id="productGrid">
       <!-- Los productos se cargarán dinámicamente desde Firebase Firestore -->
     </div>
