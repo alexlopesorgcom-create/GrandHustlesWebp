@@ -745,6 +745,14 @@
     /* Vault access confirmation: cinematic toast above the opening door */
     .vault-access-toast{position:fixed;z-index:10050;left:50%;top:10%;transform:translate(-50%,-22px) scale(.94);width:min(90vw,390px);padding:22px 24px;text-align:center;background:linear-gradient(145deg,#190c13,#090909 70%);border:1px solid #fa496e;box-shadow:0 0 0 1px #661a32,0 20px 90px #000d,0 0 55px #f2295555;opacity:0;pointer-events:none;transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1);font-family:inherit}
     .vault-access-toast.is-visible{opacity:1;transform:translate(-50%,0) scale(1)}
+    .vault-access-toast.is-denied{border-color:#ff2b4b;box-shadow:0 0 0 1px #7c102a,0 20px 90px #000d,0 0 65px #ff164766}
+    .vault-access-toast.is-denied .vault-access-symbol{background:#5e0a1b;border-color:#ff4e68;box-shadow:0 0 32px #ff164777}
+    .vault-access-toast.is-denied .vault-access-eyebrow{color:#ff7890}
+    .vault-access-toast.is-denied .vault-access-line{background:linear-gradient(90deg,transparent,#ff284c,transparent)}
+    .vault-access-toast.is-denied.is-visible{animation:vault-denied-toast .42s ease-out}
+    @keyframes vault-denied-toast{0%,100%{translate:0}25%{translate:-6px}75%{translate:6px}}
+    @media(prefers-reduced-motion:reduce){.vault-access-toast.is-denied.is-visible{animation:none}}
+
     .vault-access-toast::before{content:'';position:absolute;inset:5px;border:1px solid #ffffff1a;pointer-events:none}
     .vault-access-symbol{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 13px;border:1px solid #ff426b;border-radius:50%;color:#fff;background:#a51036;box-shadow:0 0 32px #ed174e77;font-size:28px;animation:vault-confirm-pulse 1.2s ease-out both}
     .vault-access-eyebrow{color:#ff6b8a;font-size:10px;letter-spacing:.34em;font-weight:800}
@@ -1223,6 +1231,27 @@ function cargarProductosFirestore() {
     sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
   }
 
+let vaultToastTimer;
+function showVaultAccessToast(granted) {
+  const toast = document.getElementById('vaultAccessToast');
+  if (!toast) return;
+  clearTimeout(vaultToastTimer);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  toast.querySelector('.vault-access-symbol').textContent = granted ? '✓' : '×';
+  toast.querySelector('.vault-access-eyebrow').textContent = granted ? 'IDENTITY VERIFIED // DRPHVN' : 'SECURITY ALERT // DRPHVN';
+  toast.querySelector('.vault-access-title').textContent = granted ? 'ACCESS GRANTED' : 'ACCESS DENIED';
+  toast.querySelector('.vault-access-caption').textContent = granted ? 'WELCOME TO THE PRIVATE DROP' : 'INCORRECT CODE // TRY AGAIN';
+  toast.classList.toggle('is-denied', !granted);
+  toast.hidden = false;
+  toast.classList.remove('is-visible');
+  void toast.offsetWidth;
+  toast.classList.add('is-visible');
+  vaultToastTimer = setTimeout(() => {
+    toast.classList.remove('is-visible');
+    vaultToastTimer = setTimeout(() => { toast.hidden = true; }, reducedMotion ? 0 : 400);
+  }, granted ? (reducedMotion ? 1400 : 2800) : 1800);
+}
+
 function checkAccess() {
   const modal = document.getElementById('accessModal');
   if (modal.classList.contains('vault-opening')) return;
@@ -1232,21 +1261,11 @@ function checkAccess() {
     status.textContent = 'ACCESS GRANTED // UNSEALING THE DROP';
     modal.classList.remove('vault-denied');
     modal.classList.add('vault-opening');
-    const toast = document.getElementById('vaultAccessToast');
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (toast) {
-      toast.hidden = false;
-      toast.classList.remove('is-visible');
-      void toast.offsetWidth;
-      toast.classList.add('is-visible');
-      setTimeout(() => {
-        toast.classList.remove('is-visible');
-        setTimeout(() => { toast.hidden = true; }, reducedMotion ? 0 : 400);
-      }, reducedMotion ? 1400 : 2800);
-    }
+    showVaultAccessToast(true);
     setTimeout(() => { modal.style.display = 'none'; }, reducedMotion ? 0 : 3200);
   } else {
     status.textContent = 'ACCESS DENIED // TRY AGAIN';
+    showVaultAccessToast(false);
     modal.classList.remove('vault-denied');
     void modal.offsetWidth;
     modal.classList.add('vault-denied');
