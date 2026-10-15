@@ -892,12 +892,15 @@
 
     camera.position.z = 5;
 
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     function animate() {
       requestAnimationFrame(animate);
+      if (document.hidden || reduceMotion.matches) return;
       particleMesh.rotation.y += 0.001;
       particleMesh.rotation.x += 0.0005;
       renderer.render(scene, camera);
     }
+    renderer.render(scene, camera);
     animate();
 
     window.addEventListener('resize', () => {
