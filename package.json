@@ -1,7 +1,9 @@
 {
-  "name": "grand-hustles-web",
-  "version": "1.0.0",
+  "name": "drphvn-store",
+  "version": "1.0.1",
+  "private": true,
   "dependencies": {
-    "stripe": "^14.0.0"
+    "stripe": "^14.0.0",
+    "firebase-admin": "^12.0.0"
   }
 }
