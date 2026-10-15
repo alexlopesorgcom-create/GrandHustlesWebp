@@ -45,7 +45,10 @@ module.exports = async (req, res) => {
       if (!Number.isSafeInteger(intent.amount) || intent.amount <= 0 || Math.round(Number(order.total) * 100) !== intent.amount || intent.currency !== "usd") {
         throw new Error("Payment amount or currency mismatch");
       }
-      if (order.stockUpdated === true) return;
+      if (order.stockUpdated === true) {
+        if (order.paymentId !== intent.id || order.paymentStatus !== "succeeded") throw new Error("Inconsistent settled order");
+        return;
+      }
       if (order.paymentStatus === "succeeded" && event.type === "payment_intent.payment_failed") return;
 
       if (event.type === "payment_intent.payment_failed") {
