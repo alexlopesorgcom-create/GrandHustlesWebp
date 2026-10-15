@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
       if (!Array.isArray(items) || !items.length || items.length > 100) throw new Error("Missing or oversized order items");
       const quantities = new Map();
       for (const item of items) {
-        if (typeof item.id !== "string" || !Number.isSafeInteger(item.quantity) || item.quantity < 1) {
+        if (!item || typeof item !== "object" || typeof item.id !== "string" || !item.id || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
           throw new Error("Invalid order item");
         }
         quantities.set(item.id, (quantities.get(item.id) || 0) + item.quantity);
