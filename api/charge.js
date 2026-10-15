@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
       validatedItems.push({ id: item.id, name: String(data.name || ""), price: priceCents / 100, quantity: item.quantity });
     }
     const amountCents = calculatedCents;
-    if (Math.round(Number(amount) * 100) !== amountCents) {
+    if (typeof amount !== "number" || !Number.isFinite(amount) || Math.round(amount * 100) !== amountCents) {
       return res.status(400).json({ success: false, error: "El total del carrito cambió; actualiza tu carrito" });
     }
 
