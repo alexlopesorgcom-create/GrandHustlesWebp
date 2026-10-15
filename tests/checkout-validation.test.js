@@ -1,0 +1,12 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const charge = fs.readFileSync(require('node:path').join(__dirname, '../api/charge.js'), 'utf8');
+const webhook = fs.readFileSync(require('node:path').join(__dirname, '../api/webhook.js'), 'utf8');
+assert.match(charge, /Number\.isSafeInteger\(item\.quantity\)/);
+assert.match(charge, /db\.collection\("products"\)/);
+assert.match(charge, /idempotencyKey:/);
+assert.match(webhook, /constructEvent\(/);
+assert.match(webhook, /bodyParser: false/);
+assert.match(webhook, /order\.stockUpdated === true/);
+assert.match(webhook, /db\.runTransaction/);
+console.log('Static checkout safety checks passed. Integration tests still required.');
