@@ -43,7 +43,9 @@ async function reserveStock(db, orderRef, items, timestamp) {
   });
 }
 
-async function releaseStock(db, orderRef, timestamp) {
+async function releaseStock(db, orderRef, timestamp, paymentCancellationVerified = false) {
+  // Never return reserved inventory while a Stripe payment may still settle.
+  if (paymentCancellationVerified !== true) throw new Error("Verified payment cancellation required");
   return db.runTransaction(async tx => {
     const orderSnap = await tx.get(orderRef);
     if (!orderSnap.exists) throw new Error("Reservation not found");
