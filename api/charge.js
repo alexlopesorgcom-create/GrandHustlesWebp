@@ -62,6 +62,9 @@ module.exports = async (req, res) => {
       const product = await db.collection("products").doc(item.id).get();
       if (!product.exists) return res.status(400).json({ success: false, error: "Producto no encontrado" });
       const data = product.data();
+      if (data.active === false || data.published === false) {
+        return res.status(400).json({ success: false, error: "Producto no disponible" });
+      }
       const priceCents = Math.round(Number(data.price) * 100);
       if (!Number.isSafeInteger(priceCents) || priceCents <= 0 || Number(data.stock) < item.quantity) {
         return res.status(400).json({ success: false, error: "Precio o inventario inválido" });
