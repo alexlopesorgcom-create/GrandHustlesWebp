@@ -981,11 +981,27 @@
     camera.position.z = 5;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    function animate() {
+    let scrollSpin = 0;
+    let previousScrollY = window.scrollY;
+    window.addEventListener('scroll', () => {
+      const current = window.scrollY;
+      const delta = current - previousScrollY;
+      previousScrollY = current;
+      if (reduceMotion.matches) return;
+      // Scrolling upward spins the starfield; downward scroll adds subtle depth.
+      scrollSpin = Math.max(-0.12, Math.min(0.12, scrollSpin + (delta < 0 ? Math.abs(delta) * 0.0006 : -Math.abs(delta) * 0.00008)));
+    }, { passive: true });
+    let lastFrame = 0;
+    function animate(now = 0) {
       requestAnimationFrame(animate);
       if (document.hidden || reduceMotion.matches) return;
-      particleMesh.rotation.y += 0.001;
-      particleMesh.rotation.x += 0.0005;
+      // Throttle to ~30fps on mobile to preserve battery and scrolling smoothness.
+      if (now - lastFrame < 32) return;
+      const dt = Math.min((now - lastFrame) / 33, 2) || 1;
+      lastFrame = now;
+      particleMesh.rotation.y += (0.0018 + scrollSpin) * dt;
+      particleMesh.rotation.x += (0.0009 + scrollSpin * 0.35) * dt;
+      scrollSpin *= Math.pow(0.87, dt);
       renderer.render(scene, camera);
     }
     renderer.render(scene, camera);
