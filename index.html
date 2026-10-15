@@ -1118,7 +1118,6 @@ function cargarProductosFirestore() {
       const product = doc.data();
       const id = doc.id;
       const stock = product.stock ?? 0;
-      window.drphvnProductStock[id] = Number(stock);
 
       const card = document.createElement('div');
       card.className = 'product-card';
@@ -1128,6 +1127,7 @@ function cargarProductosFirestore() {
 
       if (product.active === false || product.published === false || !Number.isFinite(product.price) || product.price <= 0 || !Number.isSafeInteger(product.stock) || product.stock < 0) return;
 
+      window.drphvnProductStock[id] = stock;
       visibleProducts += 1;
       if (stock > 5) {
         stockText = `Available: ${stock}`;
