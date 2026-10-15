@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
     const seenProducts = new Set();
     let calculatedCents = 0;
     for (const item of items) {
-      if (typeof item.id !== "string" || !item.id || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
+      if (!item || typeof item !== "object" || typeof item.id !== "string" || !item.id || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
         return res.status(400).json({ success: false, error: "Cantidad o producto inválido" });
       }
       if (seenProducts.has(item.id)) return res.status(400).json({ success: false, error: "Producto duplicado en carrito" });
