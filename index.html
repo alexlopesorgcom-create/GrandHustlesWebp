@@ -1454,56 +1454,6 @@ function updateCartUI() {
       }
     }
 
-    async function saveOrder({ items, total, email, shipping, status, updateStock, paymentMethod, paymentId, paymentStatus, orderId }) {
-      const orderRef = orderId ? db.collection("orders").doc(orderId) : db.collection("orders").doc();
-
-      if (!updateStock) {
-        await orderRef.set({
-          items,
-          total,
-          email,
-          shipping,
-          status,
-          paymentMethod,
-          paymentId: paymentId || null,
-          paymentStatus: paymentStatus || null,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        return;
-      }
-
-      await db.runTransaction(async (transaction) => {
-        const productRefs = items.map((item) => db.collection("products").doc(item.id));
-        const productSnaps = await Promise.all(productRefs.map((ref) => transaction.get(ref)));
-
-        productSnaps.forEach((snap, index) => {
-          const item = items[index];
-          if (!snap.exists) {
-            throw new Error(`Producto no encontrado: ${item.name}`);
-          }
-          const currentStock = snap.data().stock ?? 0;
-          if (currentStock < item.quantity) {
-            throw new Error(`No hay suficiente stock para "${item.name}".`);
-          }
-          transaction.update(productRefs[index], {
-            stock: currentStock - item.quantity
-          });
-        });
-
-        transaction.set(orderRef, {
-          items,
-          total,
-          email,
-          shipping,
-          status,
-          paymentMethod,
-          paymentId: paymentId || null,
-          paymentStatus: paymentStatus || null,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      });
-    }
-
     function openCheckout() {
       if (cart.length === 0) {
         alert('Tu carrito está vacío');
