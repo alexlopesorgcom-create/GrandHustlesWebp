@@ -47,6 +47,7 @@ module.exports = async (req, res) => {
         throw new Error("Payment amount or currency mismatch");
       }
       if (order.stockUpdated === true) return;
+      if (order.paymentStatus === "succeeded" && event.type === "payment_intent.payment_failed") return;
 
       if (event.type === "payment_intent.payment_failed") {
         tx.update(orderRef, {
