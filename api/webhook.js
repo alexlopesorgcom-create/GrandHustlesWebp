@@ -74,7 +74,7 @@ module.exports = async (req, res) => {
       const productSnaps = await Promise.all(productRefs.map(ref => tx.get(ref)));
       productSnaps.forEach((snap, i) => {
         if (!snap.exists || !Number.isSafeInteger(snap.data().stock) ||
-            Number(snap.data().stock) < quantities.get(snap.id)) {
+            snap.data().stock < quantities.get(snap.id)) {
           throw new Error("Insufficient stock for " + snap.id);
         }
       });
