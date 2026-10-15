@@ -47,7 +47,6 @@ module.exports = async (req, res) => {
       }
       if (order.stockUpdated === true) return;
       if (order.paymentStatus === "succeeded" && event.type === "payment_intent.payment_failed") return;
-      if (order.paymentStatus === "succeeded" && event.type === "payment_intent.succeeded") return;
 
       if (event.type === "payment_intent.payment_failed") {
         tx.update(orderRef, {
