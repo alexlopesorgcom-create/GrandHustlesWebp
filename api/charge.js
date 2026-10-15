@@ -88,7 +88,7 @@ module.exports = async (req, res) => {
     if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
       return res.status(400).json({ success: false, error: "Correo electrónico inválido" });
     }
-    if (!shipping || !["firstName","lastName","address","city","state","zip"].every(k => typeof shipping[k] === "string" && shipping[k].trim().length > 0 && shipping[k].length <= 200)) {
+    if (!shipping || typeof shipping !== "object" || Array.isArray(shipping) || !["firstName","lastName","address","city","state","zip"].every(k => typeof shipping[k] === "string" && shipping[k].trim().length > 0 && shipping[k].length <= 200)) {
       return res.status(400).json({ success: false, error: "Dirección de entrega incompleta" });
     }
 
