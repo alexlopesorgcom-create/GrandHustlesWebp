@@ -98,6 +98,18 @@ module.exports = async (req, res) => {
         stockUpdated: true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
+      // Durable email outbox. Sending is handled separately after provider setup.
+      // Deterministic IDs prevent duplicate jobs on repeated Stripe webhooks.
+      if (typeof order.email === "string" && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(order.email)) {
+        tx.set(db.collection("emailOutbox").doc("customer_paid_" + orderId), {
+          kind: "customer_order_paid", orderId, recipient: order.email,
+          state: "pending", createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      tx.set(db.collection("emailOutbox").doc("owner_paid_" + orderId), {
+        kind: "owner_new_sale", orderId,
+        state: "pending", createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
       tx.set(db.collection("notifications").doc("paid_" + orderId), {
         type: "order_paid",
         orderId,
