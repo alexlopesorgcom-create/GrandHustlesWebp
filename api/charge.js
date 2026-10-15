@@ -65,7 +65,10 @@ module.exports = async (req, res) => {
       if (data.active === false || data.published === false) {
         return res.status(400).json({ success: false, error: "Producto no disponible" });
       }
-      const priceCents = Math.round(Number(data.price) * 100);
+      if (typeof data.price !== "number" || !Number.isFinite(data.price)) {
+        return res.status(400).json({ success: false, error: "Precio del producto inválido" });
+      }
+      const priceCents = Math.round(data.price * 100);
       if (!Number.isSafeInteger(priceCents) || priceCents <= 0 || Number(data.stock) < item.quantity) {
         return res.status(400).json({ success: false, error: "Precio o inventario inválido" });
       }
