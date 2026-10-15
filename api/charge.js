@@ -50,7 +50,7 @@ module.exports = async (req, res) => {
       shipping
     } = req.body;
 
-    if (!checkoutId) {
+    if (typeof checkoutId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(checkoutId)) {
       return res.status(400).json({
         success: false,
         error: "Falta checkoutId"
@@ -103,7 +103,12 @@ module.exports = async (req, res) => {
 
     const orderRef = db.collection("orders").doc(checkoutId);
 
-    await orderRef.set({
+    const existingOrder = await orderRef.get();
+    if (existingOrder.exists) {
+      return res.status(409).json({ success: false, error: "Este intento de pago ya existe. Comprueba el estado de tu pedido antes de volver a pagar." });
+    }
+
+    await orderRef.create({
       items: validatedItems,
       total: amountCents / 100,
       email,
@@ -114,7 +119,7 @@ module.exports = async (req, res) => {
       status: "Pending Payment",
       stockUpdated: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    });
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountCents,
@@ -122,7 +127,7 @@ module.exports = async (req, res) => {
       metadata: {
         email: email || "",
         orderId: checkoutId,
-        product: "Grand Hustles Order",
+        product: "DRPHVN Order",
         items: JSON.stringify(validatedItems)
       },
       payment_method: paymentMethodId,
