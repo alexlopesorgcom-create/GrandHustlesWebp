@@ -1,8 +1,6 @@
 const Stripe = require("stripe");
 const { db, admin } = require("./firebaseAdmin");
 
-module.exports.config = { api: { bodyParser: false } };
-
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
@@ -104,3 +102,6 @@ module.exports = async (req, res) => {
   }
   return res.status(200).json({ received: true });
 };
+
+// Preserve raw request bytes for Stripe signature verification.
+module.exports.config = { api: { bodyParser: false } };
