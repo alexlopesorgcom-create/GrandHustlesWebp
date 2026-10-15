@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
   }
   const intent = event.data?.object;
   const orderId = intent?.metadata?.orderId;
-  if (!orderId || !/^[A-Za-z0-9_-]{1,128}$/.test(orderId)) {
+  if (typeof orderId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(orderId)) {
     console.error("Stripe event missing valid orderId", event.id);
     return res.status(500).json({ error: "Order reconciliation required" });
   }
