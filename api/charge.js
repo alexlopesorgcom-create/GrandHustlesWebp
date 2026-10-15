@@ -69,7 +69,7 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, error: "Precio del producto inválido" });
       }
       const priceCents = Math.round(data.price * 100);
-      if (!Number.isSafeInteger(priceCents) || priceCents <= 0 || Number(data.stock) < item.quantity) {
+      if (!Number.isSafeInteger(priceCents) || priceCents <= 0 || !Number.isSafeInteger(data.stock) || data.stock < item.quantity) {
         return res.status(400).json({ success: false, error: "Precio o inventario inválido" });
       }
       calculatedCents += priceCents * item.quantity;
