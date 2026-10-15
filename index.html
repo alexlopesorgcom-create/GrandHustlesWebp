@@ -855,6 +855,7 @@ function cargarProductosFirestore() {
   const grid = document.getElementById('productGrid');
 
   db.collection("products").onSnapshot((snapshot) => {
+    window.drphvnProductStock = Object.create(null);
     grid.innerHTML = "";
 
     if (snapshot.empty) {
@@ -867,6 +868,7 @@ function cargarProductosFirestore() {
       const product = doc.data();
       const id = doc.id;
       const stock = product.stock ?? 0;
+      window.drphvnProductStock[id] = Number(stock);
 
       const card = document.createElement('div');
       card.className = 'product-card';
