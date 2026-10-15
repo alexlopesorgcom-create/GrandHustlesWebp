@@ -28,4 +28,6 @@ test('webhook uses Firestore transaction and avoids repeat stock decrement', () 
 test('browser cannot directly write orders or product stock', () => {
   assert.match(rules, /match \/orders\//);
   assert.match(rules, /match \/products\//);
+  assert.match(rules, /allow write: if false;/);
+  assert.match(rules, /allow read, write: if false;/);
 });
