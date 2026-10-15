@@ -1262,7 +1262,7 @@ function addToCart(name, price, id) {
   if (!id) return alert('Producto inválido.');
   const stock = window.drphvnProductStock?.[id];
   const current = cart.filter(item => item.id === id).length;
-  if (Number.isFinite(stock) && current >= stock) return alert('No hay más unidades disponibles.');
+  if (!Number.isSafeInteger(stock) || stock <= 0 || current >= stock) return alert('Este producto no está disponible o se agotó. Actualiza la tienda.');
   cart.push({ name, price: Number(price), id });
   animateAddToCart(id);
   updateCartUI();
@@ -1283,7 +1283,7 @@ function changeCartQuantity(id, delta) {
     const item = cart.find(item => item.id === id);
     if (!item) return;
     const stock = window.drphvnProductStock?.[id];
-    if (Number.isFinite(stock) && cart.filter(x => x.id === id).length >= stock) {
+    if (!Number.isSafeInteger(stock) || stock <= 0 || cart.filter(x => x.id === id).length >= stock) {
       alert('No hay más unidades disponibles.');
       return;
     }
