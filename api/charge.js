@@ -194,7 +194,7 @@ module.exports = async (req, res) => {
 
       success: false,
 
-      error: error.message
+      error: "No se pudo completar el pago. Verifica el estado del pedido antes de intentar de nuevo."
 
     });
   }
