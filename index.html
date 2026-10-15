@@ -174,6 +174,26 @@
     @keyframes vault-chamber-flash {to{filter:drop-shadow(0 0 70px #ff315d)}}
     @keyframes vault-exit {to{transform:scale(1.4);opacity:0}}
     @media(prefers-reduced-motion:reduce){.vault-spokes,.vault-light,.access-modal.vault-opening .vault-spokes,.access-modal.vault-opening .vault-light,.access-modal.vault-opening .vault-door,.access-modal.vault-opening .vault-chamber,.access-modal.vault-opening .access-box{animation:none!important}}
+
+    /* Full purchase sequence: burst, rotating seal, receipt arrival */
+    .success-modal {overflow:hidden;isolation:isolate;}
+    .success-box {min-height:350px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;perspective:900px;isolation:isolate;}
+    .success-box > img {display:none;}
+    .purchase-seal {position:relative;width:150px;height:150px;display:grid;place-items:center;margin-bottom:14px;animation:purchase-seal-appear .8s cubic-bezier(.15,1.4,.3,1) both;}
+    .purchase-seal::before,.purchase-seal::after {content:"";position:absolute;inset:5%;border:4px solid #e31b36;border-radius:50%;box-shadow:0 0 30px #e31b3655;animation:purchase-seal-spin 1.3s ease-out both;}
+    .purchase-seal::after {inset:18%;border:3px dashed #fff;animation-direction:reverse;}
+    .purchase-seal span {font-size:72px;font-weight:900;color:#fff;text-shadow:0 0 25px #e31b36;animation:purchase-check .7s .65s both;}
+    .purchase-burst {position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+    .purchase-burst i {position:absolute;left:50%;top:50%;width:5px;height:35px;border-radius:6px;background:linear-gradient(#fff,#e31b36);transform:rotate(calc(var(--ray) * 30deg)) translateY(-35px);opacity:0;animation:purchase-ray 1.15s .35s ease-out forwards;}
+    .purchase-burst i:nth-child(even) {background:#ff4965;height:22px;}
+    .success-box h2 {animation:purchase-receipt .7s .7s both;}
+    .success-box p {animation:purchase-receipt .7s 1s both;}
+    @keyframes purchase-seal-appear {from{transform:scale(.1) rotate(-180deg);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes purchase-seal-spin {from{transform:rotate(-400deg) scale(.3)}to{transform:rotate(0) scale(1)}}
+    @keyframes purchase-check {from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes purchase-ray {15%{opacity:1}100%{opacity:0;transform:rotate(calc(var(--ray) * 30deg)) translateY(-260px) scale(.3)}}
+    @keyframes purchase-receipt {from{opacity:0;transform:translateY(28px) rotateX(-30deg)}to{opacity:1;transform:translateY(0) rotateX(0)}}
+    @media(prefers-reduced-motion:reduce){.purchase-seal,.purchase-seal::before,.purchase-seal::after,.purchase-seal span,.purchase-burst i,.success-box h2,.success-box p{animation:none!important}.purchase-burst{display:none}}
     /* CANVAS 3D FONDO */
     #canvas3d {
       position: fixed;
@@ -882,7 +902,7 @@
   <!-- MODAL DE PAGO EXITOSO -->
   <div id="paymentSuccessModal" class="success-modal">
     <div class="success-box">
-      <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Pago Exitoso">
+      <div class="purchase-burst" aria-hidden="true"><i style="--ray:0"></i><i style="--ray:1"></i><i style="--ray:2"></i><i style="--ray:3"></i><i style="--ray:4"></i><i style="--ray:5"></i><i style="--ray:6"></i><i style="--ray:7"></i><i style="--ray:8"></i><i style="--ray:9"></i><i style="--ray:10"></i><i style="--ray:11"></i></div><div class="purchase-seal" aria-hidden="true"><span>✓</span></div>
       <h2>¡Pago Exitoso!</h2>
       <p style="color:#aaa; font-size:0.9rem; margin-top:10px;">Tu transacción ha sido procesada correctamente.</p>
       <p style="color:#666; font-size:0.75rem; margin-top:15px;">Redirigiendo a la página principal...</p>
@@ -1374,7 +1394,7 @@ function updateCartUI() {
         successModal.style.display = 'none';
         cart = [];
         updateCartUI();
-      }, 3000);
+      }, 4500);
     }
 
     async function processPayment() {
