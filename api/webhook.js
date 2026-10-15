@@ -161,6 +161,18 @@ module.exports = async (req, res) => {
 
             });
 
+            // Persist one owner-facing notification atomically with stock updates.
+            // A separate, authenticated admin UI can read this collection.
+            const noticeRef = db.collection("notifications").doc("paid_" + orderDoc.id);
+            transaction.set(noticeRef, {
+              type: "order_paid",
+              orderId: orderDoc.id,
+              paymentId: paymentIntent.id,
+              total: orderData.total ?? paymentIntent.amount_received / 100,
+              read: false,
+              createdAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
 
 
           });
