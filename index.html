@@ -1070,6 +1070,12 @@ function addToCart(name, price, id) {
   if (Number.isFinite(stock) && current >= stock) return alert('No hay más unidades disponibles.');
   cart.push({ name, price: Number(price), id });
   updateCartUI();
+  const cartButton = document.querySelector('.cart-btn');
+  if (cartButton) {
+    cartButton.classList.remove('cart-pulse');
+    void cartButton.offsetWidth;
+    cartButton.classList.add('cart-pulse');
+  }
   document.getElementById('cartDrawer').classList.add('open');
 }
 
