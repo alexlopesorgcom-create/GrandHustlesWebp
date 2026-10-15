@@ -398,6 +398,11 @@
       font-size: 0.75rem;
     }
 
+    .cart-item-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid #333; }
+    .cart-item-row strong { overflow-wrap:anywhere; }
+    .cart-quantity-controls { display:flex; align-items:center; gap:9px; flex-shrink:0; }
+    .cart-quantity-controls button { min-width:32px; min-height:36px; background:#252525; color:white; border:1px solid #555; border-radius:6px; cursor:pointer; }
+    @media(max-width:430px) { .cart-drawer { width:100% !important; right:-100%; padding:18px; } }
     /* CARRITO LATERAL */
     .cart-drawer {
       position: fixed;
@@ -942,41 +947,85 @@ function toggleCart() {
 }
 
 function addToCart(name, price, id) {
-  cart.push({ 
-    name, 
-    price, 
-    id 
-  });
-
+  if (!id) return alert('Producto inválido.');
+  const stock = window.drphvnProductStock?.[id];
+  const current = cart.filter(item => item.id === id).length;
+  if (Number.isFinite(stock) && current >= stock) return alert('No hay más unidades disponibles.');
+  cart.push({ name, price: Number(price), id });
   updateCartUI();
-  toggleCart();
+  document.getElementById('cartDrawer').classList.add('open');
 }
 
-    function updateCartUI() {
-      document.getElementById('cartCount').innerText = cart.length;
-      const cartItems = document.getElementById('cartItems');
-      const cartTotal = document.getElementById('cartTotal');
-      
-      if (cart.length === 0) {
-        cartItems.innerHTML = '<p style="color:#666;">Your cart is empty.</p>';
-        cartTotal.innerText = '$0.00 USD';
-        return;
-      }
-
-      let html = '';
-      let total = 0;
-      cart.forEach((item) => {
-        total += item.price;
-        html += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #222; padding-bottom:5px;">
-          <span>${item.name}</span>
-          <span>$${item.price}.00</span>
-        </div>`;
-      });
-
-      cartItems.innerHTML = html;
-      cartTotal.innerText = `$${total}.00 USD`;
-      document.getElementById('checkoutTotal').innerText = `$${total}.00 USD`;
+function changeCartQuantity(id, delta) {
+  if (delta < 0) {
+    const index = cart.findLastIndex(item => item.id === id);
+    if (index !== -1) cart.splice(index, 1);
+  } else {
+    const item = cart.find(item => item.id === id);
+    if (!item) return;
+    const stock = window.drphvnProductStock?.[id];
+    if (Number.isFinite(stock) && cart.filter(x => x.id === id).length >= stock) {
+      alert('No hay más unidades disponibles.');
+      return;
     }
+    cart.push({ ...item });
+  }
+  updateCartUI();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(item => item.id !== id);
+  updateCartUI();
+}
+
+function updateCartUI() {
+  const cartItems = document.getElementById('cartItems');
+  const cartTotal = document.getElementById('cartTotal');
+  const checkoutTotal = document.getElementById('checkoutTotal');
+  document.getElementById('cartCount').textContent = cart.length;
+  const grouped = aggregateCartItems(cart);
+  const total = cart.reduce((sum, item) => sum + Number(item.price || 0), 0);
+  const money = amount => '$' + amount.toFixed(2) + ' USD';
+  cartTotal.textContent = money(total);
+  checkoutTotal.textContent = money(total);
+  cartItems.replaceChildren();
+  if (!grouped.length) {
+    const empty = document.createElement('p');
+    empty.textContent = 'Your cart is empty.';
+    cartItems.appendChild(empty);
+    return;
+  }
+  grouped.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'cart-item-row';
+    const info = document.createElement('div');
+    const name = document.createElement('strong');
+    name.textContent = item.name;
+    const price = document.createElement('div');
+    price.textContent = money(Number(item.price) * item.quantity);
+    info.append(name, price);
+    const controls = document.createElement('div');
+    controls.className = 'cart-quantity-controls';
+    const button = (label, action, aria) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      btn.setAttribute('aria-label', aria + ' ' + item.name);
+      btn.addEventListener('click', action);
+      return btn;
+    };
+    const qty = document.createElement('span');
+    qty.textContent = String(item.quantity);
+    controls.append(
+      button('−', () => changeCartQuantity(item.id, -1), 'Disminuir'),
+      qty,
+      button('+', () => changeCartQuantity(item.id, 1), 'Aumentar'),
+      button('✕', () => removeFromCart(item.id), 'Eliminar')
+    );
+    row.append(info, controls);
+    cartItems.appendChild(row);
+  });
+}
 
     function aggregateCartItems(items) {
       return items.reduce((acc, item) => {
