@@ -1548,7 +1548,12 @@ function updateCartUI() {
 
     async function processPayment() {
       const checkoutId = getCheckoutId();
-      const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+      const selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked');
+      if (!selectedPaymentMethod) {
+        document.getElementById('card-errors').textContent = 'Selecciona un método de pago.';
+        return;
+      }
+      const paymentMethod = selectedPaymentMethod.value;
 
       if (!stripe || !cardElement) {
         alert('Error con la configuración de Stripe.');
@@ -1569,8 +1574,8 @@ function updateCartUI() {
       }
 
       const amount = cart.reduce((sum, item) => sum + item.price, 0);
-      if (amount <= 0) {
-        alert('Tu carrito está vacío.');
+      if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(Math.round(amount * 100))) {
+        alert('El total del carrito no es válido. Actualiza la tienda.');
         return;
       }
 
@@ -1583,31 +1588,6 @@ function updateCartUI() {
         alert("Zelle no está disponible hasta verificar manualmente el proceso de pagos.");
         payBtn.innerText = "Pay now";
         payBtn.disabled = false;
-        return;
-      }
-
-      if (false) {
-        try {
-          await validateCartStock(aggregatedItems);
-          await saveOrder({
-            items: aggregatedItems,
-            total: amount,
-            email,
-            shipping: { firstName, lastName, address, city, state, zip },
-            status: "Pending Payment",
-            updateStock: false,
-            paymentMethod: "Zelle",
-            paymentId: null,
-            paymentStatus: null,
-            orderId: checkoutId
-          });
-          clearCheckoutId();
-          triggerPaymentSuccessUI();
-        } catch (error) {
-          document.getElementById('card-errors').textContent = error.message;
-          payBtn.innerText = "Pay now";
-          payBtn.disabled = false;
-        }
         return;
       }
 
