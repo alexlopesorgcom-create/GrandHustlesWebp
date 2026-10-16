@@ -1,266 +1,132 @@
 const Stripe = require("stripe");
-
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-
 const { db, admin } = require("./firebaseAdmin");
 
-module.exports.config = {
-  api: {
-    bodyParser: false
-  }
-};
-
 module.exports = async (req, res) => {
-
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Method not allowed"
-    });
+  if (process.env.VERCEL_ENV === "preview") return res.status(503).json({ error: "Preview payments disabled" });
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error("Stripe webhook environment is not configured");
+    return res.status(503).json({ error: "Webhook unavailable" });
   }
-
-  const sig = req.headers["stripe-signature"];
 
   let event;
-
   try {
-
     const chunks = [];
-
+    let totalBytes = 0;
     for await (const chunk of req) {
+      totalBytes += chunk.length;
+      if (totalBytes > 1024 * 1024) return res.status(413).json({ error: "Webhook payload too large" });
       chunks.push(chunk);
     }
-
-    const rawBody = Buffer.concat(chunks);
-
-    event = stripe.webhooks.constructEvent(
-      rawBody,
-      sig,
+    event = Stripe(process.env.STRIPE_SECRET_KEY).webhooks.constructEvent(
+      Buffer.concat(chunks),
+      req.headers["stripe-signature"],
       process.env.STRIPE_WEBHOOK_SECRET.trim()
     );
-
-  } catch (err) {
-
-    console.error(
-      "Webhook signature error:",
-      err.message
-    );
-
-    return res.status(400).json({
-      error: `Webhook Error: ${err.message}`
-    });
-
+  } catch (error) {
+    console.error("Stripe webhook verification failed:", error.message);
+    return res.status(400).json({ error: "Invalid webhook signature" });
   }
 
+  if (!["payment_intent.succeeded", "payment_intent.payment_failed"].includes(event.type)) {
+    return res.status(200).json({ received: true });
+  }
+  const intent = event.data?.object;
+  if (!intent || typeof intent !== "object") return res.status(400).json({ error: "Invalid payment event" });
+  const orderId = intent.metadata?.orderId;
+  if (typeof orderId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(orderId)) {
+    console.error("Stripe event missing valid orderId", event.id);
+    return res.status(500).json({ error: "Order reconciliation required" });
+  }
 
-  console.log(
-    "Stripe event:",
-    event.type
-  );
-
-
-  switch (event.type) {
-
-
-    case "payment_intent.succeeded":
-      const paymentIntent = event.data.object;
-      const orderId = paymentIntent.metadata?.orderId;
-
-      console.log(
-        "Payment confirmed:",
-        paymentIntent.id,
-        "orderId:",
-        orderId
-      );
-
-      let orderDoc = null;
-
-      if (orderId) {
-        const doc = await db.collection("orders").doc(orderId).get();
-        if (doc.exists) {
-          orderDoc = doc;
-        }
+  const orderRef = db.collection("orders").doc(orderId);
+  try {
+    await db.runTransaction(async (tx) => {
+      const orderSnap = await tx.get(orderRef);
+      if (!orderSnap.exists) throw new Error("Order not found");
+      const order = orderSnap.data();
+      if (typeof intent.id !== "string" || !intent.id.startsWith("pi_")) throw new Error("Invalid Stripe payment intent");
+      if (order.paymentId && order.paymentId !== intent.id) {
+        throw new Error("Payment intent does not match order");
       }
-
-      if (!orderDoc) {
-        const ordersSnapshot = await db.collection("orders")
-          .where("paymentId", "==", paymentIntent.id)
-          .limit(1)
-          .get();
-        if (!ordersSnapshot.empty) {
-          orderDoc = ordersSnapshot.docs[0];
-        }
+      if (!Number.isSafeInteger(intent.amount) || intent.amount <= 0 || typeof order.total !== "number" || !Number.isFinite(order.total) || Math.round(order.total * 100) !== intent.amount || intent.currency !== "usd") {
+        throw new Error("Payment amount or currency mismatch");
       }
-
-      if (orderDoc) {
-        const orderData = orderDoc.data();
-
-
-
-        if (orderData.stockUpdated !== true) {
-
-
-          await db.runTransaction(async (transaction) => {
-
-
-            for (const item of orderData.items) {
-
-
-              const productRef = db.collection("products")
-                .doc(item.id);
-
-
-
-              const productSnap = await transaction.get(productRef);
-
-
-
-              if (!productSnap.exists) {
-
-                throw new Error(
-                  `Product not found: ${item.id}`
-                );
-
-              }
-
-
-
-              const currentStock = productSnap.data().stock || 0;
-
-
-
-              if (currentStock < item.quantity) {
-
-                throw new Error(
-                  `Not enough stock for ${item.name}`
-                );
-
-              }
-
-
-
-              transaction.update(productRef, {
-
-                stock: currentStock - item.quantity
-
-              });
-
-
-            }
-
-
-
-            transaction.update(orderDoc.ref, {
-
-              status: "Paid",
-
-              paymentStatus: "succeeded",
-
-              stockUpdated: true,
-
-              updatedAt: admin.firestore.FieldValue.serverTimestamp()
-
-            });
-
-
-
-          });
-
-
-
-          console.log(
-            "Stock updated for order:",
-            orderDoc.id
-          );
-
-
-        } else {
-
-
-          console.log(
-            "Stock already updated:",
-            orderDoc.id
-          );
-
-
-        }
-
-
-
-      } else {
-
-
-        console.log(
-          "Order not found for payment:",
-          paymentIntent.id
-        );
-
-
+      if (order.stockUpdated === true) {
+        if (order.paymentId !== intent.id || order.paymentStatus !== "succeeded") throw new Error("Inconsistent settled order");
+        return;
       }
+      if (order.paymentStatus === "succeeded" && event.type === "payment_intent.payment_failed") return;
+      if (event.type === "payment_intent.succeeded" && intent.status !== "succeeded") throw new Error("Inconsistent successful payment event");
 
-
-
-      break;
-
-
-
-    case "payment_intent.payment_failed":
-      const failedIntent = event.data.object;
-      const failedOrderId = failedIntent.metadata?.orderId;
-
-      console.log(
-        "Payment failed:",
-        failedIntent.id,
-        "orderId:",
-        failedOrderId
-      );
-
-      let failedOrderDoc = null;
-
-      if (failedOrderId) {
-        const doc = await db.collection("orders").doc(failedOrderId).get();
-        if (doc.exists) {
-          failedOrderDoc = doc;
-        }
-      }
-
-      if (!failedOrderDoc) {
-        const failedOrdersSnapshot = await db.collection("orders")
-          .where("paymentId", "==", failedIntent.id)
-          .limit(1)
-          .get();
-        if (!failedOrdersSnapshot.empty) {
-          failedOrderDoc = failedOrdersSnapshot.docs[0];
-        }
-      }
-
-      if (failedOrderDoc) {
-        await failedOrderDoc.ref.update({
-          status: "Payment Failed",
+      if (event.type === "payment_intent.payment_failed") {
+        tx.update(orderRef, {
+          paymentId: intent.id,
           paymentStatus: "failed",
+          status: "Payment Failed",
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
+        return;
       }
 
-      break;
-
-
-
-    default:
-
-
-      console.log(
-        "Unhandled event:",
-        event.type
-      );
-
-
+      // Read all products before performing any writes, as Firestore transactions require.
+      const items = order.items;
+      if (!Array.isArray(items) || !items.length || items.length > 100) throw new Error("Missing or oversized order items");
+      const quantities = new Map();
+      for (const item of items) {
+        if (!item || typeof item !== "object" || typeof item.id !== "string" || !item.id || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
+          throw new Error("Invalid order item");
+        }
+        const totalQuantity = (quantities.get(item.id) || 0) + item.quantity;
+        if (!Number.isSafeInteger(totalQuantity) || totalQuantity > 100) throw new Error("Order quantity limit exceeded");
+        quantities.set(item.id, totalQuantity);
+      }
+      const productRefs = [...quantities.keys()].sort().map(id => db.collection("products").doc(id));
+      const productSnaps = await Promise.all(productRefs.map(ref => tx.get(ref)));
+      productSnaps.forEach((snap, i) => {
+        if (!snap.exists || !Number.isSafeInteger(snap.data().stock) ||
+            snap.data().stock < quantities.get(snap.id)) {
+          throw new Error("Insufficient stock for " + snap.id);
+        }
+      });
+      productSnaps.forEach((snap, i) => {
+        tx.update(productRefs[i], { stock: snap.data().stock - quantities.get(snap.id) });
+      });
+      tx.update(orderRef, {
+        paymentId: intent.id,
+        paymentStatus: "succeeded",
+        status: "Paid",
+        stockUpdated: true,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      // Durable email outbox. Sending is handled separately after provider setup.
+      // Deterministic IDs prevent duplicate jobs on repeated Stripe webhooks.
+      if (typeof order.email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(order.email)) {
+        tx.set(db.collection("emailOutbox").doc("customer_paid_" + orderId), {
+          kind: "customer_order_paid", orderId, recipient: order.email,
+          state: "pending", createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      tx.set(db.collection("emailOutbox").doc("owner_paid_" + orderId), {
+        kind: "owner_new_sale", orderId,
+        state: "pending", createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      tx.set(db.collection("notifications").doc("paid_" + orderId), {
+        type: "order_paid",
+        orderId,
+        paymentId: intent.id,
+        total: order.total,
+        read: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    });
+  } catch (error) {
+    console.error("Stripe webhook processing failed:", event.id, error.message);
+    // Non-2xx allows Stripe to retry; an operator must resolve persistent stock conflicts.
+    return res.status(500).json({ error: "Webhook processing failed" });
   }
-
-
-
-  return res.status(200).json({
-    received: true
-  });
-
-
+  return res.status(200).json({ received: true });
 };
+
+// Preserve raw request bytes for Stripe signature verification.
+module.exports.config = { api: { bodyParser: false } };
